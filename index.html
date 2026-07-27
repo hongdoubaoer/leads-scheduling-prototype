@@ -137,6 +137,31 @@ tr.disabled-row td { color: #999; }
 .cc-section-title { font-size: 13px; color: #333; }
 .cc-empty { padding: 30px; text-align: center; color: #999; font-size: 13px; border: 1px dashed #ddd; border-radius: 4px; }
 
+/* Org Picker */
+.org-picker { margin: 10px 0 12px; border: 1px solid #e8e8e8; border-radius: 6px; background: #fbfcfd; overflow: hidden; }
+.org-picker-toolbar { padding: 10px 12px; border-bottom: 1px solid #eef0f2; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.org-picker-title { font-size: 13px; font-weight: 500; color: #333; }
+.org-picker-body { display: grid; grid-template-columns: 1fr 220px; min-height: 260px; max-height: 360px; }
+.org-tree { padding: 10px 12px; overflow-y: auto; border-right: 1px solid #eef0f2; background: #fff; }
+.org-node { margin: 2px 0; }
+.org-row { display: flex; align-items: center; gap: 6px; min-height: 28px; font-size: 13px; color: #333; border-radius: 4px; padding: 3px 6px; }
+.org-row:hover { background: #f0faf5; }
+.org-row input { accent-color: #4ecdc4; }
+.org-indent-0 { padding-left: 0; }
+.org-indent-1 { padding-left: 18px; }
+.org-indent-2 { padding-left: 36px; }
+.org-indent-3 { padding-left: 54px; }
+.org-indent-4 { padding-left: 72px; }
+.org-caret { color: #999; width: 12px; display: inline-block; }
+.org-member { color: #666; }
+.org-selected { padding: 10px 12px; overflow-y: auto; }
+.org-selected-title { font-size: 12px; color: #666; margin-bottom: 8px; }
+.org-selected-list { display: flex; flex-direction: column; gap: 6px; }
+.org-selected-item { padding: 6px 8px; background: #f0faf5; border-radius: 4px; font-size: 12px; color: #333; line-height: 1.4; }
+.org-selected-item span { color: #999; }
+.org-selected-empty { color: #aaa; font-size: 12px; padding: 20px 0; text-align: center; }
+.org-hint { font-size: 12px; color: #999; padding: 8px 12px; background: #fff; border-top: 1px solid #eef0f2; }
+
 /* Confirm Dialog */
 .confirm-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); z-index: 2000; display: flex; align-items: center; justify-content: center; }
 .confirm-box { background: #fff; border-radius: 8px; width: 420px; padding: 24px; box-shadow: 0 8px 40px rgba(0,0,0,0.15); }
@@ -407,7 +432,26 @@ tr.highlight-row { background: #f0fffe; }
           <div class="cc-search-bar">
             <input type="text" placeholder="搜索已有 CC 姓名或账号" id="addStrategyCCSearch">
             <button class="btn btn-sm btn-primary" onclick="searchCCForStrategy()">🔍 搜索</button>
+            <button class="btn btn-sm" onclick="toggleOrgPicker()">🏢 通过组织架构添加</button>
             <button class="btn btn-sm" onclick="showManualAddCC('strategy')" style="margin-left:4px;">+ 手动新增</button>
+          </div>
+          <div class="org-picker hidden" id="orgPicker">
+            <div class="org-picker-toolbar">
+              <div class="org-picker-title">组织架构选择</div>
+              <div class="btn-group">
+                <button class="btn btn-sm" onclick="selectAllOrgCC()">全选全部 CC</button>
+                <button class="btn btn-sm" onclick="clearOrgSelection()">清空选择</button>
+                <button class="btn btn-sm btn-primary" onclick="confirmOrgSelection()">添加已选</button>
+              </div>
+            </div>
+            <div class="org-picker-body">
+              <div class="org-tree" id="orgTree"></div>
+              <div class="org-selected">
+                <div class="org-selected-title">已选人员 <strong id="orgSelectedCount">0</strong> 人</div>
+                <div class="org-selected-list" id="orgSelectedList"><div class="org-selected-empty">可勾选部门或单个 CC</div></div>
+              </div>
+            </div>
+            <div class="org-hint">支持单选人员、多选人员；勾选部门时会自动选中该部门下所有 CC，适合批量新人、分城市/分小组统一排班。</div>
           </div>
           <div class="cc-search-results hidden" id="addStrategyCCResults"></div>
           <!-- 手动新增表单（strategy） -->
@@ -717,7 +761,65 @@ var allAvailableCC = [
   { name: '孙丽萍', account: 'xn_sunliping@vipkid.com.cn' },
   { name: '马小军', account: 'xn_maxiaojun@vipkid.com.cn' },
   { name: '黄婷婷', account: 'xn_huangtingting@vipkid.com.cn' },
-  { name: '吴小燕', account: 'xn_wuxiaoyan@vipkid.com.cn' }
+  { name: '吴小燕', account: 'xn_wuxiaoyan@vipkid.com.cn' },
+  { name: '李宏宇P', account: 'lihongyu@vipkid.com.cn' },
+  { name: '冯杰P', account: 'fengjie@vipkid.com.cn' },
+  { name: '马文彪P', account: 'mawenbiao@vipkid.com.cn' },
+  { name: '王星凯P', account: 'wangxingkai@vipkid.com.cn' },
+  { name: '宋子健P', account: 'songzijian@vipkid.com.cn' },
+  { name: '邓春彦P', account: 'dengchunyan@vipkid.com.cn' },
+  { name: '曾小欢P', account: 'zengxiaohuan@vipkid.com.cn' },
+  { name: '刘始贵P', account: 'liushigui@vipkid.com.cn' },
+  { name: '张世达P', account: 'zhangshida@vipkid.com.cn' },
+  { name: '付正勇P', account: 'fuzhengyong@vipkid.com.cn' },
+  { name: '黄丽P', account: 'huangli@vipkid.com.cn' },
+  { name: '常钰琪P', account: 'changyuqi@vipkid.com.cn' }
+];
+
+// Demo org tree based on current org-structure page
+var orgTreeData = [
+  { id: 'vipkid', name: 'VIPKID', children: [
+    { id: 'ops', name: '运营部', children: [] },
+    { id: 'biz', name: '业务部', children: [
+      { id: 'sales', name: 'SayABC-销售中心', children: [
+        { id: 'pcc1', name: 'PCC1', members: [
+          { name: '李宏宇P', account: 'lihongyu@vipkid.com.cn' },
+          { name: '冯杰P', account: 'fengjie@vipkid.com.cn' },
+          { name: '马文彪P', account: 'mawenbiao@vipkid.com.cn' },
+          { name: '王星凯P', account: 'wangxingkai@vipkid.com.cn' },
+          { name: '宋子健P', account: 'songzijian@vipkid.com.cn' },
+          { name: '邓春彦P', account: 'dengchunyan@vipkid.com.cn' },
+          { name: '曾小欢P', account: 'zengxiaohuan@vipkid.com.cn' },
+          { name: '刘始贵P', account: 'liushigui@vipkid.com.cn' },
+          { name: '张世达P', account: 'zhangshida@vipkid.com.cn' },
+          { name: '付正勇P', account: 'fuzhengyong@vipkid.com.cn' },
+          { name: '黄丽P', account: 'huangli@vipkid.com.cn' },
+          { name: '常钰琪P', account: 'changyuqi@vipkid.com.cn' }
+        ]},
+        { id: 'pcc2', name: 'PCC2', members: [
+          { name: '沈艳梅', account: 'xn_shenyanmei@vipkid.com.cn' },
+          { name: '张玉峰', account: 'xn_zhangyufeng@vipkid.com.cn' },
+          { name: '王玉红', account: 'xn_wangyuhong@vipkid.com.cn' },
+          { name: '周建国', account: 'xn_zhoujianguo@vipkid.com.cn' }
+        ]},
+        { id: 'pcc3', name: 'PCC3', members: [
+          { name: '孙丽萍', account: 'xn_sunliping@vipkid.com.cn' },
+          { name: '马小军', account: 'xn_maxiaojun@vipkid.com.cn' },
+          { name: '黄婷婷', account: 'xn_huangtingting@vipkid.com.cn' },
+          { name: '吴小燕', account: 'xn_wuxiaoyan@vipkid.com.cn' }
+        ]}
+      ]},
+      { id: 'lp', name: 'SayABC-LP', children: [
+        { id: 'plp1', name: 'PLP1', members: [] },
+        { id: 'plp2', name: 'PLP2', members: [] }
+      ]}
+    ]},
+    { id: 'mkt', name: '市场部', children: [] },
+    { id: 'teacher', name: '教师端', children: [] },
+    { id: 'qa', name: '质检', children: [] },
+    { id: 'cs', name: '客服', children: [] },
+    { id: 'tmk', name: 'TMK', children: [] }
+  ]}
 ];
 
 var currentConfirmType = '';
@@ -725,6 +827,7 @@ var currentConfirmTarget = '';
 var pendingDuplicateCC = null;
 var pendingDuplicateCallback = null;
 var addedStrategyCC = []; // CC added in strategy modal
+var orgSelectedAccounts = {}; // temp selection in org picker
 
 // =================== TOAST ===================
 function showToast(msg, type) {
@@ -945,6 +1048,9 @@ function showAddStrategyModal() {
   document.getElementById('addStrategyCCSearch').value = '';
   document.getElementById('strategyCCCount').textContent = '';
   addedStrategyCC = [];
+  orgSelectedAccounts = {};
+  if (document.getElementById('orgPicker')) document.getElementById('orgPicker').classList.add('hidden');
+  renderOrgPicker();
   document.getElementById('addStrategyModal').classList.remove('hidden');
 }
 
@@ -954,6 +1060,8 @@ function showEditStrategyModal(name) {
   // Pre-populate CC list
   addedStrategyCC = allCC.filter(function(c) { return c.source === name; }).map(function(c) { return { name: c.name, account: c.account }; });
   renderStrategyCCTable();
+  orgSelectedAccounts = {};
+  renderOrgPicker();
   document.getElementById('addStrategyCCResults').classList.add('hidden');
   document.getElementById('addStrategyCCSearch').value = '';
   document.getElementById('addStrategyModal').classList.remove('hidden');
@@ -999,6 +1107,7 @@ function addCCToNewStrategy(name, account) {
       addedStrategyCC.push({ name: name, account: account });
       renderStrategyCCTable();
       searchCCForStrategy(); // refresh search results
+      renderOrgPicker();
     };
     document.getElementById('duplicateDesc').textContent = '「' + name + '」已存在于「' + existingCC.source + '」中。确认添加后，该 CC 将从原排班中移出并加入当前策略。';
     document.getElementById('duplicateDialog').classList.remove('hidden');
@@ -1007,6 +1116,146 @@ function addCCToNewStrategy(name, account) {
   addedStrategyCC.push({ name: name, account: account });
   renderStrategyCCTable();
   searchCCForStrategy();
+  renderOrgPicker();
+}
+
+function flattenOrgMembers(nodes) {
+  var members = [];
+  (nodes || []).forEach(function(node) {
+    (node.members || []).forEach(function(m) { members.push(m); });
+    members = members.concat(flattenOrgMembers(node.children || []));
+  });
+  var seen = {};
+  return members.filter(function(m) {
+    if (seen[m.account]) return false;
+    seen[m.account] = true;
+    return true;
+  });
+}
+
+function getNodeMembers(node) {
+  return flattenOrgMembers([node]);
+}
+
+function toggleOrgPicker() {
+  var picker = document.getElementById('orgPicker');
+  picker.classList.toggle('hidden');
+  renderOrgPicker();
+}
+
+function renderOrgPicker() {
+  var tree = document.getElementById('orgTree');
+  if (!tree) return;
+  tree.innerHTML = renderOrgNodes(orgTreeData, 0);
+  syncOrgCheckboxes();
+  renderOrgSelectedList();
+}
+
+function renderOrgNodes(nodes, level) {
+  return (nodes || []).map(function(node) {
+    var members = node.members || [];
+    var children = node.children || [];
+    var nodeMembers = getNodeMembers(node);
+    var html = '<div class="org-node">'
+      + '<label class="org-row org-indent-' + Math.min(level, 4) + '">'
+      + '<span class="org-caret">' + (children.length || members.length ? '▾' : '') + '</span>'
+      + '<input type="checkbox" data-org-id="' + node.id + '" onchange="toggleOrgNode(\'' + node.id + '\', this.checked)">'
+      + '<strong>' + node.name + '</strong>'
+      + (nodeMembers.length ? '<span style="color:#999;font-size:12px;">（' + nodeMembers.length + '人）</span>' : '')
+      + '</label>';
+    members.forEach(function(m) {
+      html += '<label class="org-row org-indent-' + Math.min(level + 1, 4) + ' org-member">'
+        + '<span class="org-caret"></span>'
+        + '<input type="checkbox" data-account="' + m.account + '" onchange="toggleOrgMember(\'' + m.name + '\',\'' + m.account + '\', this.checked)">'
+        + '<span>' + m.name + '</span><span style="color:#999;font-size:12px;">' + m.account + '</span>'
+        + '</label>';
+    });
+    html += renderOrgNodes(children, level + 1) + '</div>';
+    return html;
+  }).join('');
+}
+
+function findOrgNode(nodes, id) {
+  for (var i = 0; i < (nodes || []).length; i++) {
+    if (nodes[i].id === id) return nodes[i];
+    var found = findOrgNode(nodes[i].children || [], id);
+    if (found) return found;
+  }
+  return null;
+}
+
+function toggleOrgNode(id, checked) {
+  var node = findOrgNode(orgTreeData, id);
+  getNodeMembers(node).forEach(function(m) {
+    if (checked) orgSelectedAccounts[m.account] = m;
+    else delete orgSelectedAccounts[m.account];
+  });
+  syncOrgCheckboxes();
+  renderOrgSelectedList();
+}
+
+function toggleOrgMember(name, account, checked) {
+  if (checked) orgSelectedAccounts[account] = { name: name, account: account };
+  else delete orgSelectedAccounts[account];
+  syncOrgCheckboxes();
+  renderOrgSelectedList();
+}
+
+function syncOrgCheckboxes() {
+  document.querySelectorAll('#orgTree input[data-account]').forEach(function(cb) {
+    var alreadyAdded = addedStrategyCC.some(function(c) { return c.account === cb.getAttribute('data-account'); });
+    cb.checked = !!orgSelectedAccounts[cb.getAttribute('data-account')] || alreadyAdded;
+    cb.disabled = alreadyAdded;
+  });
+  document.querySelectorAll('#orgTree input[data-org-id]').forEach(function(cb) {
+    var node = findOrgNode(orgTreeData, cb.getAttribute('data-org-id'));
+    var members = getNodeMembers(node);
+    cb.checked = members.length > 0 && members.every(function(m) {
+      return orgSelectedAccounts[m.account] || addedStrategyCC.some(function(c) { return c.account === m.account; });
+    });
+    cb.indeterminate = members.some(function(m) {
+      return orgSelectedAccounts[m.account] || addedStrategyCC.some(function(c) { return c.account === m.account; });
+    }) && !cb.checked;
+  });
+}
+
+function renderOrgSelectedList() {
+  var selected = Object.keys(orgSelectedAccounts).map(function(k) { return orgSelectedAccounts[k]; })
+    .filter(function(m) { return !addedStrategyCC.some(function(c) { return c.account === m.account; }); });
+  document.getElementById('orgSelectedCount').textContent = selected.length;
+  var list = document.getElementById('orgSelectedList');
+  if (!selected.length) {
+    list.innerHTML = '<div class="org-selected-empty">可勾选部门或单个 CC</div>';
+    return;
+  }
+  list.innerHTML = selected.map(function(m) {
+    return '<div class="org-selected-item">' + m.name + '<br><span>' + m.account + '</span></div>';
+  }).join('');
+}
+
+function selectAllOrgCC() {
+  flattenOrgMembers(orgTreeData).forEach(function(m) { orgSelectedAccounts[m.account] = m; });
+  renderOrgPicker();
+}
+
+function clearOrgSelection() {
+  orgSelectedAccounts = {};
+  renderOrgPicker();
+}
+
+function confirmOrgSelection() {
+  var selected = Object.keys(orgSelectedAccounts).map(function(k) { return orgSelectedAccounts[k]; });
+  var added = 0;
+  selected.forEach(function(m) {
+    if (!addedStrategyCC.some(function(c) { return c.account === m.account; })) {
+      addedStrategyCC.push({ name: m.name, account: m.account });
+      added++;
+    }
+  });
+  orgSelectedAccounts = {};
+  renderStrategyCCTable();
+  renderOrgPicker();
+  showToast('已通过组织架构添加 ' + added + ' 名 CC', added ? 'success' : 'warning');
 }
 
 function renderStrategyCCTable() {
@@ -1029,6 +1278,7 @@ function renderStrategyCCTable() {
 function removeStrategyCC(idx) {
   addedStrategyCC.splice(idx, 1);
   renderStrategyCCTable();
+  renderOrgPicker();
 }
 
 function submitStrategy() {
@@ -1152,6 +1402,7 @@ function confirmManualAddCC(context) {
     pendingDuplicateCallback = function() {
       addedStrategyCC.push({ name: name, account: account });
       renderStrategyCCTable();
+      renderOrgPicker();
       hideManualAddCC(context);
       showToast('已添加 ' + name, 'success');
     };
@@ -1161,6 +1412,7 @@ function confirmManualAddCC(context) {
   }
   addedStrategyCC.push({ name: name, account: account });
   renderStrategyCCTable();
+  renderOrgPicker();
   hideManualAddCC(context);
   showToast('已添加新 CC：' + name, 'success');
 }
