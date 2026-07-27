@@ -141,26 +141,27 @@ tr.disabled-row td { color: #999; }
 .org-picker { margin: 10px 0 12px; border: 1px solid #e8e8e8; border-radius: 6px; background: #fbfcfd; overflow: hidden; }
 .org-picker-toolbar { padding: 10px 12px; border-bottom: 1px solid #eef0f2; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .org-picker-title { font-size: 13px; font-weight: 500; color: #333; }
-.org-picker-body { display: grid; grid-template-columns: 1fr 220px; min-height: 260px; max-height: 360px; }
-.org-tree { padding: 10px 12px; overflow-y: auto; border-right: 1px solid #eef0f2; background: #fff; }
+.org-picker-body { min-height: 260px; max-height: 360px; overflow-y: auto; background: #fff; padding: 8px 12px; }
+.org-tree { width: 100%; }
 .org-node { margin: 2px 0; }
-.org-row { display: flex; align-items: center; gap: 6px; min-height: 28px; font-size: 13px; color: #333; border-radius: 4px; padding: 3px 6px; }
+.org-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 8px; min-height: 34px; font-size: 13px; color: #333; border-radius: 4px; padding: 4px 6px; }
 .org-row:hover { background: #f0faf5; }
-.org-row input { accent-color: #4ecdc4; }
+.org-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .org-indent-0 { padding-left: 0; }
 .org-indent-1 { padding-left: 18px; }
 .org-indent-2 { padding-left: 36px; }
 .org-indent-3 { padding-left: 54px; }
 .org-indent-4 { padding-left: 72px; }
 .org-caret { color: #999; width: 12px; display: inline-block; }
-.org-member { color: #666; }
-.org-selected { padding: 10px 12px; overflow-y: auto; }
-.org-selected-title { font-size: 12px; color: #666; margin-bottom: 8px; }
-.org-selected-list { display: flex; flex-direction: column; gap: 6px; }
-.org-selected-item { padding: 6px 8px; background: #f0faf5; border-radius: 4px; font-size: 12px; color: #333; line-height: 1.4; }
-.org-selected-item span { color: #999; }
-.org-selected-empty { color: #aaa; font-size: 12px; padding: 20px 0; text-align: center; }
+.org-count { color: #999; font-size: 12px; white-space: nowrap; }
 .org-hint { font-size: 12px; color: #999; padding: 8px 12px; background: #fff; border-top: 1px solid #eef0f2; }
+.member-picker-overlay { z-index: 1600; }
+.member-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.member-toolbar input { flex: 1; padding: 7px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; outline: none; }
+.member-toolbar input:focus { border-color: #4ecdc4; }
+.member-summary { font-size: 12px; color: #666; margin-bottom: 8px; }
+.member-table-wrap { border: 1px solid #f0f0f0; border-radius: 6px; overflow: hidden; max-height: 360px; overflow-y: auto; }
+.member-empty { padding: 30px; text-align: center; color: #999; font-size: 13px; }
 
 /* Confirm Dialog */
 .confirm-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); z-index: 2000; display: flex; align-items: center; justify-content: center; }
@@ -438,20 +439,12 @@ tr.highlight-row { background: #f0fffe; }
           <div class="org-picker hidden" id="orgPicker">
             <div class="org-picker-toolbar">
               <div class="org-picker-title">组织架构选择</div>
-              <div class="btn-group">
-                <button class="btn btn-sm" onclick="selectAllOrgCC()">全选全部 CC</button>
-                <button class="btn btn-sm" onclick="clearOrgSelection()">清空选择</button>
-                <button class="btn btn-sm btn-primary" onclick="confirmOrgSelection()">添加已选</button>
-              </div>
+              <span style="font-size:12px;color:#999;">先选择组织，再从该组织下选择人员</span>
             </div>
             <div class="org-picker-body">
               <div class="org-tree" id="orgTree"></div>
-              <div class="org-selected">
-                <div class="org-selected-title">已选人员 <strong id="orgSelectedCount">0</strong> 人</div>
-                <div class="org-selected-list" id="orgSelectedList"><div class="org-selected-empty">可勾选部门或单个 CC</div></div>
-              </div>
             </div>
-            <div class="org-hint">支持单选人员、多选人员；勾选部门时会自动选中该部门下所有 CC，适合批量新人、分城市/分小组统一排班。</div>
+            <div class="org-hint">此处仅展示组织架构，不直接展示具体人员。点击右侧「选择人员」后，可对该组织下 CC 进行全选、单选或多选。</div>
           </div>
           <div class="cc-search-results hidden" id="addStrategyCCResults"></div>
           <!-- 手动新增表单（strategy） -->
@@ -483,6 +476,35 @@ tr.highlight-row { background: #f0fffe; }
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('addStrategyModal')">取消</button>
       <button class="btn btn-primary" onclick="submitStrategy()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 组织架构人员选择 -->
+<div class="modal-overlay hidden member-picker-overlay" id="orgMemberModal">
+  <div class="modal" style="width: 680px;">
+    <div class="modal-header">
+      <div class="modal-title" id="orgMemberTitle">选择人员</div>
+      <button class="modal-close" onclick="closeOrgMemberModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#f9fafb;border-radius:6px;padding:12px 14px;margin-bottom:14px;">
+        <div style="font-size:12px;color:#999;margin-bottom:4px;">当前组织</div>
+        <strong id="orgMemberCurrentOrg">-</strong>
+      </div>
+      <div class="member-toolbar">
+        <input type="text" id="orgMemberSearch" placeholder="搜索 CC 姓名或账号" oninput="renderOrgMemberList()">
+        <div class="btn-group">
+          <button class="btn btn-sm" onclick="selectAllOrgMembersInModal()">全选当前组织</button>
+          <button class="btn btn-sm" onclick="clearOrgMemberSelection()">清空选择</button>
+        </div>
+      </div>
+      <div class="member-summary">已选 <strong id="orgMemberSelectedCount">0</strong> 人；支持全选、单选、多选</div>
+      <div class="member-table-wrap" id="orgMemberList"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeOrgMemberModal()">取消</button>
+      <button class="btn btn-primary" onclick="confirmOrgMemberSelection()">确认添加</button>
     </div>
   </div>
 </div>
@@ -827,7 +849,9 @@ var currentConfirmTarget = '';
 var pendingDuplicateCC = null;
 var pendingDuplicateCallback = null;
 var addedStrategyCC = []; // CC added in strategy modal
-var orgSelectedAccounts = {}; // temp selection in org picker
+var currentOrgNode = null;
+var currentOrgMembers = [];
+var orgMemberSelectedAccounts = {}; // temp selection in member picker
 
 // =================== TOAST ===================
 function showToast(msg, type) {
@@ -1048,7 +1072,9 @@ function showAddStrategyModal() {
   document.getElementById('addStrategyCCSearch').value = '';
   document.getElementById('strategyCCCount').textContent = '';
   addedStrategyCC = [];
-  orgSelectedAccounts = {};
+  currentOrgNode = null;
+  currentOrgMembers = [];
+  orgMemberSelectedAccounts = {};
   if (document.getElementById('orgPicker')) document.getElementById('orgPicker').classList.add('hidden');
   renderOrgPicker();
   document.getElementById('addStrategyModal').classList.remove('hidden');
@@ -1060,7 +1086,9 @@ function showEditStrategyModal(name) {
   // Pre-populate CC list
   addedStrategyCC = allCC.filter(function(c) { return c.source === name; }).map(function(c) { return { name: c.name, account: c.account }; });
   renderStrategyCCTable();
-  orgSelectedAccounts = {};
+  currentOrgNode = null;
+  currentOrgMembers = [];
+  orgMemberSelectedAccounts = {};
   renderOrgPicker();
   document.getElementById('addStrategyCCResults').classList.add('hidden');
   document.getElementById('addStrategyCCSearch').value = '';
@@ -1106,8 +1134,7 @@ function addCCToNewStrategy(name, account) {
     pendingDuplicateCallback = function() {
       addedStrategyCC.push({ name: name, account: account });
       renderStrategyCCTable();
-      searchCCForStrategy(); // refresh search results
-      renderOrgPicker();
+      searchCCForStrategy();
     };
     document.getElementById('duplicateDesc').textContent = '「' + name + '」已存在于「' + existingCC.source + '」中。确认添加后，该 CC 将从原排班中移出并加入当前策略。';
     document.getElementById('duplicateDialog').classList.remove('hidden');
@@ -1116,7 +1143,6 @@ function addCCToNewStrategy(name, account) {
   addedStrategyCC.push({ name: name, account: account });
   renderStrategyCCTable();
   searchCCForStrategy();
-  renderOrgPicker();
 }
 
 function flattenOrgMembers(nodes) {
@@ -1147,29 +1173,19 @@ function renderOrgPicker() {
   var tree = document.getElementById('orgTree');
   if (!tree) return;
   tree.innerHTML = renderOrgNodes(orgTreeData, 0);
-  syncOrgCheckboxes();
-  renderOrgSelectedList();
 }
 
 function renderOrgNodes(nodes, level) {
   return (nodes || []).map(function(node) {
-    var members = node.members || [];
     var children = node.children || [];
     var nodeMembers = getNodeMembers(node);
+    var childCount = children.length;
     var html = '<div class="org-node">'
-      + '<label class="org-row org-indent-' + Math.min(level, 4) + '">'
-      + '<span class="org-caret">' + (children.length || members.length ? '▾' : '') + '</span>'
-      + '<input type="checkbox" data-org-id="' + node.id + '" onchange="toggleOrgNode(\'' + node.id + '\', this.checked)">'
-      + '<strong>' + node.name + '</strong>'
-      + (nodeMembers.length ? '<span style="color:#999;font-size:12px;">（' + nodeMembers.length + '人）</span>' : '')
-      + '</label>';
-    members.forEach(function(m) {
-      html += '<label class="org-row org-indent-' + Math.min(level + 1, 4) + ' org-member">'
-        + '<span class="org-caret"></span>'
-        + '<input type="checkbox" data-account="' + m.account + '" onchange="toggleOrgMember(\'' + m.name + '\',\'' + m.account + '\', this.checked)">'
-        + '<span>' + m.name + '</span><span style="color:#999;font-size:12px;">' + m.account + '</span>'
-        + '</label>';
-    });
+      + '<div class="org-row org-indent-' + Math.min(level, 4) + '">'
+      + '<div class="org-name"><span class="org-caret">' + (children.length ? '▾' : '') + '</span><strong>' + node.name + '</strong></div>'
+      + '<span class="org-count">' + (childCount ? childCount + '个下级 · ' : '') + nodeMembers.length + '人</span>'
+      + '<button class="btn btn-sm btn-primary" onclick="openOrgMemberModal(\'' + node.id + '\')">选择人员</button>'
+      + '</div>';
     html += renderOrgNodes(children, level + 1) + '</div>';
     return html;
   }).join('');
@@ -1184,67 +1200,85 @@ function findOrgNode(nodes, id) {
   return null;
 }
 
-function toggleOrgNode(id, checked) {
-  var node = findOrgNode(orgTreeData, id);
-  getNodeMembers(node).forEach(function(m) {
-    if (checked) orgSelectedAccounts[m.account] = m;
-    else delete orgSelectedAccounts[m.account];
-  });
-  syncOrgCheckboxes();
-  renderOrgSelectedList();
+function getOrgPath(nodes, id, path) {
+  path = path || [];
+  for (var i = 0; i < (nodes || []).length; i++) {
+    var nextPath = path.concat(nodes[i].name);
+    if (nodes[i].id === id) return nextPath.join(' / ');
+    var found = getOrgPath(nodes[i].children || [], id, nextPath);
+    if (found) return found;
+  }
+  return '';
 }
 
-function toggleOrgMember(name, account, checked) {
-  if (checked) orgSelectedAccounts[account] = { name: name, account: account };
-  else delete orgSelectedAccounts[account];
-  syncOrgCheckboxes();
-  renderOrgSelectedList();
+function openOrgMemberModal(id) {
+  currentOrgNode = findOrgNode(orgTreeData, id);
+  currentOrgMembers = getNodeMembers(currentOrgNode);
+  orgMemberSelectedAccounts = {};
+  document.getElementById('orgMemberTitle').textContent = '选择人员 — ' + currentOrgNode.name;
+  document.getElementById('orgMemberCurrentOrg').textContent = getOrgPath(orgTreeData, id) || currentOrgNode.name;
+  document.getElementById('orgMemberSearch').value = '';
+  renderOrgMemberList();
+  document.getElementById('orgMemberModal').classList.remove('hidden');
 }
 
-function syncOrgCheckboxes() {
-  document.querySelectorAll('#orgTree input[data-account]').forEach(function(cb) {
-    var alreadyAdded = addedStrategyCC.some(function(c) { return c.account === cb.getAttribute('data-account'); });
-    cb.checked = !!orgSelectedAccounts[cb.getAttribute('data-account')] || alreadyAdded;
-    cb.disabled = alreadyAdded;
-  });
-  document.querySelectorAll('#orgTree input[data-org-id]').forEach(function(cb) {
-    var node = findOrgNode(orgTreeData, cb.getAttribute('data-org-id'));
-    var members = getNodeMembers(node);
-    cb.checked = members.length > 0 && members.every(function(m) {
-      return orgSelectedAccounts[m.account] || addedStrategyCC.some(function(c) { return c.account === m.account; });
-    });
-    cb.indeterminate = members.some(function(m) {
-      return orgSelectedAccounts[m.account] || addedStrategyCC.some(function(c) { return c.account === m.account; });
-    }) && !cb.checked;
-  });
+function closeOrgMemberModal() {
+  document.getElementById('orgMemberModal').classList.add('hidden');
 }
 
-function renderOrgSelectedList() {
-  var selected = Object.keys(orgSelectedAccounts).map(function(k) { return orgSelectedAccounts[k]; })
-    .filter(function(m) { return !addedStrategyCC.some(function(c) { return c.account === m.account; }); });
-  document.getElementById('orgSelectedCount').textContent = selected.length;
-  var list = document.getElementById('orgSelectedList');
-  if (!selected.length) {
-    list.innerHTML = '<div class="org-selected-empty">可勾选部门或单个 CC</div>';
+function renderOrgMemberList() {
+  var wrap = document.getElementById('orgMemberList');
+  if (!wrap) return;
+  var keyword = document.getElementById('orgMemberSearch').value.trim().toLowerCase();
+  var visible = currentOrgMembers.filter(function(m) {
+    return !keyword || m.name.toLowerCase().includes(keyword) || m.account.toLowerCase().includes(keyword);
+  });
+  var selectedCount = Object.keys(orgMemberSelectedAccounts).length;
+  document.getElementById('orgMemberSelectedCount').textContent = selectedCount;
+  if (!currentOrgMembers.length) {
+    wrap.innerHTML = '<div class="member-empty">该组织下暂无可选 CC</div>';
     return;
   }
-  list.innerHTML = selected.map(function(m) {
-    return '<div class="org-selected-item">' + m.name + '<br><span>' + m.account + '</span></div>';
-  }).join('');
+  if (!visible.length) {
+    wrap.innerHTML = '<div class="member-empty">未找到匹配的 CC</div>';
+    return;
+  }
+  wrap.innerHTML = '<table><thead><tr><th style="width:52px;">选择</th><th>姓名</th><th>账号</th><th>状态</th></tr></thead><tbody>'
+    + visible.map(function(m) {
+      var alreadyAdded = addedStrategyCC.some(function(c) { return c.account === m.account; });
+      var checked = !!orgMemberSelectedAccounts[m.account] || alreadyAdded;
+      return '<tr>'
+        + '<td><input type="checkbox" style="accent-color:#4ecdc4;" ' + (checked ? 'checked ' : '') + (alreadyAdded ? 'disabled ' : '') + 'onchange="toggleOrgMemberInModal(\'' + m.name + '\',\'' + m.account + '\', this.checked)"></td>'
+        + '<td><strong>' + m.name + '</strong></td>'
+        + '<td>' + m.account + '</td>'
+        + '<td>' + (alreadyAdded ? '<span class="tag tag-gray">已添加</span>' : '<span class="tag tag-green">在职</span>') + '</td>'
+        + '</tr>';
+    }).join('') + '</tbody></table>';
 }
 
-function selectAllOrgCC() {
-  flattenOrgMembers(orgTreeData).forEach(function(m) { orgSelectedAccounts[m.account] = m; });
-  renderOrgPicker();
+function toggleOrgMemberInModal(name, account, checked) {
+  if (checked) orgMemberSelectedAccounts[account] = { name: name, account: account };
+  else delete orgMemberSelectedAccounts[account];
+  document.getElementById('orgMemberSelectedCount').textContent = Object.keys(orgMemberSelectedAccounts).length;
 }
 
-function clearOrgSelection() {
-  orgSelectedAccounts = {};
-  renderOrgPicker();
+function selectAllOrgMembersInModal() {
+  var keyword = document.getElementById('orgMemberSearch').value.trim().toLowerCase();
+  currentOrgMembers.forEach(function(m) {
+    var matches = !keyword || m.name.toLowerCase().includes(keyword) || m.account.toLowerCase().includes(keyword);
+    var alreadyAdded = addedStrategyCC.some(function(c) { return c.account === m.account; });
+    if (matches && !alreadyAdded) orgMemberSelectedAccounts[m.account] = m;
+  });
+  renderOrgMemberList();
 }
 
-function confirmOrgSelection() {
-  var selected = Object.keys(orgSelectedAccounts).map(function(k) { return orgSelectedAccounts[k]; });
+function clearOrgMemberSelection() {
+  orgMemberSelectedAccounts = {};
+  renderOrgMemberList();
+}
+
+function confirmOrgMemberSelection() {
+  var selected = Object.keys(orgMemberSelectedAccounts).map(function(k) { return orgMemberSelectedAccounts[k]; });
   var added = 0;
   selected.forEach(function(m) {
     if (!addedStrategyCC.some(function(c) { return c.account === m.account; })) {
@@ -1252,10 +1286,9 @@ function confirmOrgSelection() {
       added++;
     }
   });
-  orgSelectedAccounts = {};
+  closeOrgMemberModal();
   renderStrategyCCTable();
-  renderOrgPicker();
-  showToast('已通过组织架构添加 ' + added + ' 名 CC', added ? 'success' : 'warning');
+  showToast('已从「' + (currentOrgNode ? currentOrgNode.name : '组织') + '」添加 ' + added + ' 名 CC', added ? 'success' : 'warning');
 }
 
 function renderStrategyCCTable() {
@@ -1278,7 +1311,6 @@ function renderStrategyCCTable() {
 function removeStrategyCC(idx) {
   addedStrategyCC.splice(idx, 1);
   renderStrategyCCTable();
-  renderOrgPicker();
 }
 
 function submitStrategy() {
@@ -1402,7 +1434,6 @@ function confirmManualAddCC(context) {
     pendingDuplicateCallback = function() {
       addedStrategyCC.push({ name: name, account: account });
       renderStrategyCCTable();
-      renderOrgPicker();
       hideManualAddCC(context);
       showToast('已添加 ' + name, 'success');
     };
@@ -1412,7 +1443,6 @@ function confirmManualAddCC(context) {
   }
   addedStrategyCC.push({ name: name, account: account });
   renderStrategyCCTable();
-  renderOrgPicker();
   hideManualAddCC(context);
   showToast('已添加新 CC：' + name, 'success');
 }
