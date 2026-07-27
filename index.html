@@ -152,7 +152,10 @@ tr.disabled-row td { color: #999; }
 .org-indent-2 { padding-left: 36px; }
 .org-indent-3 { padding-left: 54px; }
 .org-indent-4 { padding-left: 72px; }
-.org-caret { color: #999; width: 12px; display: inline-block; }
+.org-caret { color: #999; width: 18px; height: 18px; line-height: 18px; text-align: center; display: inline-block; border-radius: 3px; cursor: pointer; user-select: none; }
+.org-caret:hover { background: #e8f8f5; color: #4ecdc4; }
+.org-caret-placeholder { cursor: default; }
+.org-caret-placeholder:hover { background: transparent; color: #999; }
 .org-count { color: #999; font-size: 12px; white-space: nowrap; }
 .org-hint { font-size: 12px; color: #999; padding: 8px 12px; background: #fff; border-top: 1px solid #eef0f2; }
 .member-picker-overlay { z-index: 1600; }
@@ -852,6 +855,7 @@ var addedStrategyCC = []; // CC added in strategy modal
 var currentOrgNode = null;
 var currentOrgMembers = [];
 var orgMemberSelectedAccounts = {}; // temp selection in member picker
+var collapsedOrgNodeIds = {}; // org tree expand/collapse state
 
 // =================== TOAST ===================
 function showToast(msg, type) {
@@ -1175,18 +1179,28 @@ function renderOrgPicker() {
   tree.innerHTML = renderOrgNodes(orgTreeData, 0);
 }
 
+function toggleOrgNode(id) {
+  collapsedOrgNodeIds[id] = !collapsedOrgNodeIds[id];
+  renderOrgPicker();
+}
+
 function renderOrgNodes(nodes, level) {
   return (nodes || []).map(function(node) {
     var children = node.children || [];
     var nodeMembers = getNodeMembers(node);
     var childCount = children.length;
+    var isCollapsed = !!collapsedOrgNodeIds[node.id];
+    var caret = children.length
+      ? '<span class="org-caret" onclick="toggleOrgNode(\'' + node.id + '\')" title="' + (isCollapsed ? '展开' : '收起') + '">' + (isCollapsed ? '▸' : '▾') + '</span>'
+      : '<span class="org-caret org-caret-placeholder"></span>';
     var html = '<div class="org-node">'
       + '<div class="org-row org-indent-' + Math.min(level, 4) + '">'
-      + '<div class="org-name"><span class="org-caret">' + (children.length ? '▾' : '') + '</span><strong>' + node.name + '</strong></div>'
+      + '<div class="org-name">' + caret + '<strong>' + node.name + '</strong></div>'
       + '<span class="org-count">' + (childCount ? childCount + '个下级 · ' : '') + nodeMembers.length + '人</span>'
       + '<button class="btn btn-sm btn-primary" onclick="openOrgMemberModal(\'' + node.id + '\')">选择人员</button>'
       + '</div>';
-    html += renderOrgNodes(children, level + 1) + '</div>';
+    if (children.length && !isCollapsed) html += renderOrgNodes(children, level + 1);
+    html += '</div>';
     return html;
   }).join('');
 }
