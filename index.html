@@ -239,8 +239,9 @@ tr.highlight-row { background: #f0fffe; }
 
       <!-- Toolbar -->
       <div class="toolbar">
-        <button class="btn btn-primary" onclick="showAddStrategyModal()">+ 新增排班策略</button>
-        <button class="btn btn-primary" onclick="showAddSingleCCModal()">+ 新增单独 CC 排班</button>
+        <button class="btn btn-primary" onclick="showAddStrategyModal()">+ 新增小组常规排班</button>
+        <button class="btn btn-primary" onclick="showAddSingleCCModal()">+ 新增个人常规排班</button>
+        <button class="btn btn-primary" onclick="showAddSpecialScheduleModal()">+ 新增特殊排班</button>
         <div class="divider"></div>
         <input type="text" class="search-input" placeholder="搜索 CC 姓名/账号" id="toolbarSearchInput">
         <button class="btn btn-sm" onclick="doToolbarSearch()">🔍 搜索</button>
@@ -262,17 +263,17 @@ tr.highlight-row { background: #f0fffe; }
       <!-- Section 1: 排班策略列表 -->
       <div class="table-container" style="margin-bottom: 20px;" id="strategyTableContainer">
         <div class="table-header">
-          <div class="table-title">排班策略</div>
+          <div class="table-title">小组常规排班</div>
           <span style="font-size: 12px; color: #999;" id="strategyCount">共 4 条</span>
         </div>
         <table>
           <thead>
             <tr>
-              <th>策略名称</th>
+              <th>排班名称</th>
               <th>工作时间（周中）</th>
               <th>工作时间（周末）</th>
               <th>休息日</th>
-              <th>CC 人数</th>
+              <th>适用小组 / CC 人数</th>
               <th>状态</th>
               <th>创建时间</th>
               <th>创建人</th>
@@ -378,18 +379,18 @@ tr.highlight-row { background: #f0fffe; }
   </div>
 </div>
 
-<!-- Modal: 新增排班策略 -->
+<!-- Modal: 新增小组常规排班 -->
 <div class="modal-overlay hidden" id="addStrategyModal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title" id="addStrategyTitle">新增排班策略</div>
+      <div class="modal-title" id="addStrategyTitle">新增小组常规排班</div>
       <button class="modal-close" onclick="closeModal('addStrategyModal')">×</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <div class="form-label">策略名称</div>
+        <div class="form-label">排班名称</div>
         <div class="form-control">
-          <input type="text" placeholder="请输入策略名称" id="strategyNameInput" maxlength="30">
+          <input type="text" placeholder="请输入小组常规排班名称" id="strategyNameInput" maxlength="30">
           <div class="form-hint">最多 30 个字符</div>
         </div>
       </div>
@@ -431,45 +432,26 @@ tr.highlight-row { background: #f0fffe; }
       <div style="border-top: 1px solid #f0f0f0; padding-top: 16px; margin-top: 8px;">
         <div class="cc-section">
           <div class="cc-section-header">
-            <div class="cc-section-title"><strong>CC 名单</strong> <span id="strategyCCCount" style="color:#999;font-size:12px;"></span></div>
+            <div class="cc-section-title"><strong>适用小组</strong> <span id="strategyCCCount" style="color:#999;font-size:12px;"></span></div>
           </div>
           <div class="cc-search-bar">
-            <input type="text" placeholder="搜索已有 CC 姓名或账号" id="addStrategyCCSearch">
-            <button class="btn btn-sm btn-primary" onclick="searchCCForStrategy()">🔍 搜索</button>
-            <button class="btn btn-sm" onclick="toggleOrgPicker()">🏢 通过组织架构添加</button>
-            <button class="btn btn-sm" onclick="showManualAddCC('strategy')" style="margin-left:4px;">+ 手动新增</button>
+            <button class="btn btn-sm" onclick="toggleOrgPicker()">🏢 通过组织架构添加小组</button>
+            <span style="font-size:12px;color:#999;align-self:center;">只支持选择到小组；后续组织架构加人后，默认跟随该小组排班</span>
           </div>
           <div class="org-picker hidden" id="orgPicker">
             <div class="org-picker-toolbar">
               <div class="org-picker-title">组织架构选择</div>
-              <span style="font-size:12px;color:#999;">先选择组织，再从该组织下选择人员</span>
+              <span style="font-size:12px;color:#999;">选择组织架构中的小组</span>
             </div>
             <div class="org-picker-body">
               <div class="org-tree" id="orgTree"></div>
             </div>
-            <div class="org-hint">此处仅展示组织架构，不直接展示具体人员。点击右侧「选择人员」后，可对该组织下 CC 进行全选、单选或多选。</div>
+            <div class="org-hint">此处只选择小组，不选择具体人员。小组下后续新增 CC 时，将默认跟随该小组常规排班。</div>
           </div>
-          <div class="cc-search-results hidden" id="addStrategyCCResults"></div>
-          <!-- 手动新增表单（strategy） -->
-          <div class="hidden" id="manualAddCCFormStrategy" style="margin-top:8px; padding:12px; background:#f9fbfc; border:1px dashed #c8dce8; border-radius:6px;">
-            <div style="font-size:12px;color:#666;margin-bottom:8px;">手动录入新 CC（不在已有库中）</div>
-            <div style="display:flex;gap:8px;align-items:flex-end;">
-              <div>
-                <div style="font-size:12px;color:#666;margin-bottom:4px;">姓名</div>
-                <input type="text" id="manualCCNameStrategy" placeholder="如：沈艳梅" style="padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;width:120px;">
-              </div>
-              <div>
-                <div style="font-size:12px;color:#666;margin-bottom:4px;">账号</div>
-                <input type="text" id="manualCCAccountStrategy" placeholder="如：shenyuanmei" style="padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;width:140px;">
-              </div>
-              <button class="btn btn-sm btn-primary" onclick="confirmManualAddCC('strategy')">添加</button>
-              <button class="btn btn-sm" onclick="hideManualAddCC('strategy')">取消</button>
-            </div>
-          </div>
-          <div class="cc-empty" id="addStrategyCCEmpty">暂无 CC，可通过搜索选择已有 CC，或点击「手动新增」录入新人</div>
+          <div class="cc-empty" id="addStrategyCCEmpty">暂未选择小组，请通过组织架构添加小组</div>
           <table class="hidden" id="addStrategyCCTable" style="margin-top: 8px;">
             <thead>
-              <tr><th>姓名</th><th>账号</th><th>角色</th><th>状态</th><th>操作</th></tr>
+              <tr><th>小组名称</th><th>组织路径</th><th>当前 CC 数</th><th>生效方式</th><th>操作</th></tr>
             </thead>
             <tbody id="addStrategyCCTableBody"></tbody>
           </table>
@@ -512,11 +494,11 @@ tr.highlight-row { background: #f0fffe; }
   </div>
 </div>
 
-<!-- Modal: 新增单独 CC 排班 -->
+<!-- Modal: 新增个人常规排班 -->
 <div class="modal-overlay hidden" id="addSingleCCModal">
   <div class="modal" style="width: 560px;">
     <div class="modal-header">
-      <div class="modal-title">新增单独 CC 排班</div>
+      <div class="modal-title">新增个人常规排班</div>
       <button class="modal-close" onclick="closeModal('addSingleCCModal')">×</button>
     </div>
     <div class="modal-body">
@@ -552,7 +534,7 @@ tr.highlight-row { background: #f0fffe; }
                 <input type="text" id="singleCCManualAccount" placeholder="请输入账号" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;outline:none;">
               </div>
             </div>
-            <div style="font-size:12px;color:#999;margin-top:6px;">⚠️ 该 CC 将被录入系统并配置单独排班</div>
+            <div style="font-size:12px;color:#999;margin-top:6px;">⚠️ 该 CC 将被录入系统并配置个人常规排班</div>
           </div>
           <div class="form-hint" style="margin-top:6px;display:none;" id="singleCCHintSearch">输入姓名或账号搜索，选择已在系统中的 CC</div>
           <div class="form-hint" style="margin-top:6px;display:none;" id="singleCCHintManual">填写信息后，该 CC 将新增入库并配置排班</div>
@@ -596,6 +578,75 @@ tr.highlight-row { background: #f0fffe; }
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('addSingleCCModal')">取消</button>
       <button class="btn btn-primary" onclick="submitSingleCC()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 新增特殊排班 -->
+<div class="modal-overlay hidden" id="specialScheduleModal">
+  <div class="modal" style="width: 760px;">
+    <div class="modal-header">
+      <div class="modal-title">新增特殊排班</div>
+      <button class="modal-close" onclick="closeModal('specialScheduleModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#fff7e6;border:1px solid #ffd591;border-radius:6px;padding:10px 12px;margin-bottom:16px;font-size:13px;color:#8a5a00;">
+        特殊排班用于覆盖加班、节假日等临时场景，优先级最高。
+      </div>
+      <div class="form-group">
+        <div class="form-label">排班类型</div>
+        <div class="form-control">
+          <label class="checkbox-item"><input type="radio" name="specialScheduleType" value="加班" checked> 加班</label>
+          <label class="checkbox-item"><input type="radio" name="specialScheduleType" value="放假"> 放假</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <div class="form-control">
+          <input type="date" id="specialScheduleDate" value="2026-07-27">
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">时间段</div>
+        <div class="form-control">
+          <div class="time-range">
+            <input type="time" value="09:00" id="specialScheduleStart">
+            <span class="sep">—</span>
+            <input type="time" value="18:00" id="specialScheduleEnd">
+          </div>
+          <div class="form-hint">放假也需要配置日期 + 时间段，用于表达覆盖范围</div>
+        </div>
+      </div>
+      <div style="border-top: 1px solid #f0f0f0; padding-top: 16px; margin-top: 8px;">
+        <div class="cc-section">
+          <div class="cc-section-header">
+            <div class="cc-section-title"><strong>选择人员</strong> <span id="specialCCCount" style="color:#999;font-size:12px;"></span></div>
+          </div>
+          <div class="cc-search-bar">
+            <button class="btn btn-sm" onclick="toggleSpecialOrgPicker()">🏢 通过组织架构添加</button>
+            <span style="font-size:12px;color:#999;align-self:center;">先选择组织，再从该组织下选择人员；支持全选、单选、多选</span>
+          </div>
+          <div class="org-picker hidden" id="specialOrgPicker">
+            <div class="org-picker-toolbar">
+              <div class="org-picker-title">组织架构选择</div>
+              <span style="font-size:12px;color:#999;">先选择组织，再从该组织下选择人员</span>
+            </div>
+            <div class="org-picker-body">
+              <div class="org-tree" id="specialOrgTree"></div>
+            </div>
+            <div class="org-hint">点击右侧「选择人员」后，可对该组织下 CC 进行全选、单选或多选。</div>
+          </div>
+          <div class="cc-empty" id="specialCCEmpty">暂未选择人员，请通过组织架构添加</div>
+          <table class="hidden" id="specialCCTable" style="margin-top: 8px;">
+            <thead><tr><th>姓名</th><th>账号</th><th>覆盖类型</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody id="specialCCTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('specialScheduleModal')">取消</button>
+      <button class="btn btn-primary" onclick="submitSpecialSchedule()">保存</button>
     </div>
   </div>
 </div>
@@ -723,10 +774,10 @@ tr.highlight-row { background: #f0fffe; }
         <tbody>
           <tr><td>2026-07-21 16:30</td><td>wangyating</td><td><span class="tag tag-orange">停用</span></td><td>停用 CC：赵丽娜（标准班策略）</td></tr>
           <tr><td>2026-07-21 16:20</td><td>wangyating</td><td><span class="tag tag-orange">停用</span></td><td>停用排班策略「新人班」</td></tr>
-          <tr><td>2026-07-21 16:05</td><td>wangyating</td><td><span class="tag tag-green">新增</span></td><td>新增单独排班：陈晓丽，周中 13:00-21:00，休息日周四</td></tr>
-          <tr><td>2026-07-21 15:00</td><td>wangyating</td><td><span class="tag tag-green">新增</span></td><td>新增排班策略「周末加长班」，CC 6 人</td></tr>
-          <tr><td>2026-07-21 14:35</td><td>wangyating</td><td><span class="tag tag-green">新增</span></td><td>新增排班策略「早班」，CC 8 人</td></tr>
-          <tr><td>2026-07-21 14:30</td><td>wangyating</td><td><span class="tag tag-green">新增</span></td><td>新增排班策略「标准班」，CC 40 人</td></tr>
+          <tr><td>2026-07-21 16:05</td><td>wangyating</td><td><span class="tag tag-green">新增</span></td><td>新增个人常规排班：陈晓丽，周中 13:00-21:00，休息日周四</td></tr>
+          <tr><td>2026-07-21 15:00</td><td>wangyating</td><td><span class="tag tag-green">新增</span></td><td>新增小组常规排班「周末加长班」，CC 6 人</td></tr>
+          <tr><td>2026-07-21 14:35</td><td>wangyating</td><td><span class="tag tag-green">新增</span></td><td>新增小组常规排班「早班」，CC 8 人</td></tr>
+          <tr><td>2026-07-21 14:30</td><td>wangyating</td><td><span class="tag tag-green">新增</span></td><td>新增小组常规排班「标准班」，CC 40 人</td></tr>
           <tr><td>2026-07-21 14:25</td><td>wangyating</td><td><span class="tag tag-blue">修改</span></td><td>修改首触掉库时效：5 小时 → 3 小时</td></tr>
         </tbody>
       </table>
@@ -851,11 +902,13 @@ var currentConfirmType = '';
 var currentConfirmTarget = '';
 var pendingDuplicateCC = null;
 var pendingDuplicateCallback = null;
-var addedStrategyCC = []; // CC added in strategy modal
+var addedStrategyCC = []; // selected groups or CC/persons in current modal
 var currentOrgNode = null;
 var currentOrgMembers = [];
 var orgMemberSelectedAccounts = {}; // temp selection in member picker
 var collapsedOrgNodeIds = {}; // org tree expand/collapse state
+var strategySelectionMode = 'group'; // group | special
+var addedSpecialCC = [];
 
 // =================== TOAST ===================
 function showToast(msg, type) {
@@ -998,11 +1051,11 @@ function applyFilters() {
 
 // =================== CONFIRM DIALOG ===================
 var confirmMessages = {
-  'stop-strategy': { icon: '⚠️', title: '确认停用该排班策略？', desc: '停用后，该策略下所有 CC 暂停排班计时，不影响其他策略。' },
-  'enable-strategy': { icon: '✅', title: '确认启用该排班策略？', desc: '启用后，该策略下所有 CC 恢复排班计时。' },
-  'enable-created-strategy': { icon: '✅', title: '排班策略已保存为停用状态，是否立即启用？', desc: '启用后，该策略下 CC 新分 Leads 将按该策略计算掉库倒计时。取消则保持停用，可后续在列表中启用。' },
-  'enable-created-cc': { icon: '✅', title: '单独 CC 排班已保存为停用状态，是否立即启用？', desc: '启用后，该 CC 新分 Leads 将按该排班计算掉库倒计时。取消则保持停用，可后续在列表中启用。' },
-  'delete-strategy': { icon: '🗑️', title: '确认删除该排班策略？', desc: '删除后，策略下所有 CC 将变为无排班状态。此操作不可撤销。' },
+  'stop-strategy': { icon: '⚠️', title: '确认停用该小组常规排班？', desc: '停用后，该小组常规排班暂停生效。' },
+  'enable-strategy': { icon: '✅', title: '确认启用该小组常规排班？', desc: '启用后，该小组下 CC 按该常规排班计算。' },
+  'enable-created-strategy': { icon: '✅', title: '小组常规排班已保存为停用状态，是否立即启用？', desc: '启用后，该小组下 CC 将按该常规排班计算。取消则保持停用，可后续在列表中启用。' },
+  'enable-created-cc': { icon: '✅', title: '个人常规排班已保存为停用状态，是否立即启用？', desc: '启用后，该 CC 新分 Leads 将按该排班计算掉库倒计时。取消则保持停用，可后续在列表中启用。' },
+  'delete-strategy': { icon: '🗑️', title: '确认删除该小组常规排班？', desc: '删除后，该排班配置将被移除。此操作不可撤销。' },
   'stop-cc': { icon: '⚠️', title: '确认停用该 CC 的排班？', desc: '停用后，仅该 CC 新分 Leads 不按排班计时，不影响同策略其他 CC。' },
   'enable-cc': { icon: '✅', title: '确认启用该 CC 的排班？', desc: '启用后，该 CC 新分 Leads 恢复按排班计时。' },
   'remove-cc': { icon: '🗑️', title: '确认移除该 CC？', desc: '移除后，该 CC 将从当前排班中移出，掉库倒计时不再按排班计算。' }
@@ -1051,7 +1104,7 @@ function confirmAction() {
     }
     allCC.forEach(function(c){ if (c.source === currentConfirmTarget) c.status = (currentConfirmType === 'stop-strategy' ? '停用' : '启用'); });
     renderCCTable();
-    showToast('策略「' + currentConfirmTarget + '」已' + (currentConfirmType === 'stop-strategy' ? '停用' : '启用'), 'success');
+    showToast('小组常规排班「' + currentConfirmTarget + '」已' + (currentConfirmType === 'stop-strategy' ? '停用' : '启用'), 'success');
   } else if (currentConfirmType === 'enable-created-cc') {
     var ccNew = allCC.find(function(c) { return c.name === currentConfirmTarget; });
     if (ccNew) { ccNew.status = '启用'; renderCCTable(); showToast(currentConfirmTarget + ' 已启用', 'success'); }
@@ -1059,7 +1112,7 @@ function confirmAction() {
     var row = document.querySelector('#strategyTableBody tr[data-name="' + currentConfirmTarget + '"]');
     if (row) row.remove();
     allCC = allCC.filter(function(c) { return c.source !== currentConfirmTarget; });
-    renderCCTable(); showToast('策略「' + currentConfirmTarget + '」已删除', 'success');
+    renderCCTable(); showToast('小组常规排班「' + currentConfirmTarget + '」已删除', 'success');
   } else {
     showToast('操作成功', 'success');
   }
@@ -1067,13 +1120,12 @@ function confirmAction() {
 
 // =================== ADD STRATEGY MODAL ===================
 function showAddStrategyModal() {
-  document.getElementById('addStrategyTitle').textContent = '新增排班策略';
+  strategySelectionMode = 'group';
+  document.getElementById('addStrategyTitle').textContent = '新增小组常规排班';
   document.getElementById('strategyNameInput').value = '';
   document.getElementById('addStrategyCCEmpty').classList.remove('hidden');
   document.getElementById('addStrategyCCTable').classList.add('hidden');
   document.getElementById('addStrategyCCTableBody').innerHTML = '';
-  document.getElementById('addStrategyCCResults').classList.add('hidden');
-  document.getElementById('addStrategyCCSearch').value = '';
   document.getElementById('strategyCCCount').textContent = '';
   addedStrategyCC = [];
   currentOrgNode = null;
@@ -1085,68 +1137,17 @@ function showAddStrategyModal() {
 }
 
 function showEditStrategyModal(name) {
-  document.getElementById('addStrategyTitle').textContent = '编辑排班策略 — ' + name;
+  strategySelectionMode = 'group';
+  document.getElementById('addStrategyTitle').textContent = '编辑小组常规排班 — ' + name;
   document.getElementById('strategyNameInput').value = name;
-  // Pre-populate CC list
-  addedStrategyCC = allCC.filter(function(c) { return c.source === name; }).map(function(c) { return { name: c.name, account: c.account }; });
+  // Demo only：编辑时重新选择适用小组
+  addedStrategyCC = [];
   renderStrategyCCTable();
   currentOrgNode = null;
   currentOrgMembers = [];
   orgMemberSelectedAccounts = {};
   renderOrgPicker();
-  document.getElementById('addStrategyCCResults').classList.add('hidden');
-  document.getElementById('addStrategyCCSearch').value = '';
   document.getElementById('addStrategyModal').classList.remove('hidden');
-}
-
-function searchCCForStrategy() {
-  var val = document.getElementById('addStrategyCCSearch').value.trim().toLowerCase();
-  var results = document.getElementById('addStrategyCCResults');
-  if (!val) { results.classList.add('hidden'); return; }
-  var matched = allAvailableCC.filter(function(c) {
-    return c.name.toLowerCase().includes(val) || c.account.toLowerCase().includes(val);
-  });
-  if (matched.length === 0) {
-    results.innerHTML = '<div style="padding:12px;text-align:center;color:#999;font-size:13px;">未找到匹配的 CC</div>';
-  } else {
-    results.innerHTML = matched.map(function(c) {
-      var alreadyAdded = addedStrategyCC.some(function(a) { return a.account === c.account; });
-      return '<div class="cc-search-result-item" onclick="addCCToNewStrategy(\'' + c.name + '\',\'' + c.account + '\')">'
-        + '<div><span class="name">' + c.name + '</span> <span class="account">' + c.account + '</span></div>'
-        + (alreadyAdded ? '<span style="color:#999;font-size:12px;">已添加</span>' : '<span class="add-btn">+ 添加</span>')
-        + '</div>';
-    }).join('');
-  }
-  results.classList.remove('hidden');
-}
-
-document.getElementById('addStrategyCCSearch').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') searchCCForStrategy();
-});
-
-function addCCToNewStrategy(name, account) {
-  // Check duplicate - already in this strategy
-  if (addedStrategyCC.some(function(c) { return c.account === account; })) {
-    showToast(name + ' 已在当前策略中，请勿重复添加', 'warning');
-    return;
-  }
-  // Check duplicate - in another strategy/排班
-  var existingCC = allCC.find(function(c) { return c.account === account; });
-  if (existingCC) {
-    // Show duplicate warning
-    pendingDuplicateCC = { name: name, account: account };
-    pendingDuplicateCallback = function() {
-      addedStrategyCC.push({ name: name, account: account });
-      renderStrategyCCTable();
-      searchCCForStrategy();
-    };
-    document.getElementById('duplicateDesc').textContent = '「' + name + '」已存在于「' + existingCC.source + '」中。确认添加后，该 CC 将从原排班中移出并加入当前策略。';
-    document.getElementById('duplicateDialog').classList.remove('hidden');
-    return;
-  }
-  addedStrategyCC.push({ name: name, account: account });
-  renderStrategyCCTable();
-  searchCCForStrategy();
 }
 
 function flattenOrgMembers(nodes) {
@@ -1197,12 +1198,35 @@ function renderOrgNodes(nodes, level) {
       + '<div class="org-row org-indent-' + Math.min(level, 4) + '">'
       + '<div class="org-name">' + caret + '<strong>' + node.name + '</strong></div>'
       + '<span class="org-count">' + (childCount ? childCount + '个下级 · ' : '') + nodeMembers.length + '人</span>'
-      + '<button class="btn btn-sm btn-primary" onclick="openOrgMemberModal(\'' + node.id + '\')">选择人员</button>'
+      + (strategySelectionMode === 'group'
+        ? '<button class="btn btn-sm btn-primary" onclick="chooseGroupForStrategy(\'' + node.id + '\')">选择小组</button>'
+        : '<button class="btn btn-sm btn-primary" onclick="openOrgMemberModal(\'' + node.id + '\')">选择人员</button>')
       + '</div>';
     if (children.length && !isCollapsed) html += renderOrgNodes(children, level + 1);
     html += '</div>';
     return html;
   }).join('');
+}
+
+function chooseGroupForStrategy(id) {
+  var node = findOrgNode(orgTreeData, id);
+  if (!node) return;
+  var path = getOrgPath(orgTreeData, id) || node.name;
+  if (addedStrategyCC.some(function(g){ return g.id === id; })) {
+    showToast('该小组已添加', 'warning');
+    return;
+  }
+  addedStrategyCC.push({ id: id, name: node.name, path: path, count: getNodeMembers(node).length });
+  renderStrategyCCTable();
+  showToast('已添加小组：' + node.name, 'success');
+}
+
+function toggleSpecialOrgPicker() {
+  strategySelectionMode = 'special';
+  var picker = document.getElementById('specialOrgPicker');
+  picker.classList.toggle('hidden');
+  var tree = document.getElementById('specialOrgTree');
+  if (tree) tree.innerHTML = renderOrgNodes(orgTreeData, 0);
 }
 
 function findOrgNode(nodes, id) {
@@ -1259,7 +1283,7 @@ function renderOrgMemberList() {
   }
   wrap.innerHTML = '<table><thead><tr><th style="width:52px;">选择</th><th>姓名</th><th>账号</th><th>状态</th></tr></thead><tbody>'
     + visible.map(function(m) {
-      var alreadyAdded = addedStrategyCC.some(function(c) { return c.account === m.account; });
+      var alreadyAdded = (strategySelectionMode === 'special' ? addedSpecialCC : addedStrategyCC).some(function(c) { return c.account === m.account; });
       var checked = !!orgMemberSelectedAccounts[m.account] || alreadyAdded;
       return '<tr>'
         + '<td><input type="checkbox" style="accent-color:#4ecdc4;" ' + (checked ? 'checked ' : '') + (alreadyAdded ? 'disabled ' : '') + 'onchange="toggleOrgMemberInModal(\'' + m.name + '\',\'' + m.account + '\', this.checked)"></td>'
@@ -1280,7 +1304,7 @@ function selectAllOrgMembersInModal() {
   var keyword = document.getElementById('orgMemberSearch').value.trim().toLowerCase();
   currentOrgMembers.forEach(function(m) {
     var matches = !keyword || m.name.toLowerCase().includes(keyword) || m.account.toLowerCase().includes(keyword);
-    var alreadyAdded = addedStrategyCC.some(function(c) { return c.account === m.account; });
+    var alreadyAdded = (strategySelectionMode === 'special' ? addedSpecialCC : addedStrategyCC).some(function(c) { return c.account === m.account; });
     if (matches && !alreadyAdded) orgMemberSelectedAccounts[m.account] = m;
   });
   renderOrgMemberList();
@@ -1295,13 +1319,15 @@ function confirmOrgMemberSelection() {
   var selected = Object.keys(orgMemberSelectedAccounts).map(function(k) { return orgMemberSelectedAccounts[k]; });
   var added = 0;
   selected.forEach(function(m) {
-    if (!addedStrategyCC.some(function(c) { return c.account === m.account; })) {
-      addedStrategyCC.push({ name: m.name, account: m.account });
+    var target = strategySelectionMode === 'special' ? addedSpecialCC : addedStrategyCC;
+    if (!target.some(function(c) { return c.account === m.account; })) {
+      target.push({ name: m.name, account: m.account });
       added++;
     }
   });
   closeOrgMemberModal();
-  renderStrategyCCTable();
+  if (strategySelectionMode === 'special') renderSpecialCCTable();
+  else renderStrategyCCTable();
   showToast('已从「' + (currentOrgNode ? currentOrgNode.name : '组织') + '」添加 ' + added + ' 名 CC', added ? 'success' : 'warning');
 }
 
@@ -1315,9 +1341,10 @@ function renderStrategyCCTable() {
   }
   document.getElementById('addStrategyCCEmpty').classList.add('hidden');
   document.getElementById('addStrategyCCTable').classList.remove('hidden');
-  document.getElementById('strategyCCCount').textContent = '（' + addedStrategyCC.length + '人）';
-  tbody.innerHTML = addedStrategyCC.map(function(c, i) {
-    return '<tr><td>' + c.name + '</td><td>' + c.account + '</td><td>BCC</td><td><span class="tag tag-green">启用</span></td>'
+  var totalCC = addedStrategyCC.reduce(function(sum, g){ return sum + (g.count || 0); }, 0);
+  document.getElementById('strategyCCCount').textContent = '（' + addedStrategyCC.length + '个小组 / 当前' + totalCC + '人）';
+  tbody.innerHTML = addedStrategyCC.map(function(g, i) {
+    return '<tr><td><strong>' + g.name + '</strong></td><td>' + (g.path || '-') + '</td><td>' + (g.count || 0) + ' 人</td><td><span class="tag tag-green">跟随小组</span></td>'
       + '<td><button class="action-btn delete" onclick="removeStrategyCC(' + i + ')">移除</button></td></tr>';
   }).join('');
 }
@@ -1329,7 +1356,7 @@ function removeStrategyCC(idx) {
 
 function submitStrategy() {
   var name = document.getElementById('strategyNameInput').value.trim();
-  if (!name) { showToast('请输入策略名称', 'error'); return; }
+  if (!name) { showToast('请输入排班名称', 'error'); return; }
   var weekdayStart = document.getElementById('strategyWeekdayStart').value;
   var weekdayEnd = document.getElementById('strategyWeekdayEnd').value;
   var weekendStart = document.getElementById('strategyWeekendStart').value;
@@ -1341,7 +1368,7 @@ function submitStrategy() {
   if (!isEdit) {
     // Check duplicate strategy name
     var existRow = document.querySelector('#strategyTableBody tr[data-name="' + name + '"]');
-    if (existRow) { showToast('策略名称「' + name + '」已存在', 'error'); return; }
+    if (existRow) { showToast('排班名称「' + name + '」已存在', 'error'); return; }
     // Add row to strategy table
     var newRow = document.createElement('tr');
     newRow.setAttribute('data-name', name);
@@ -1350,7 +1377,7 @@ function submitStrategy() {
       + '<td>' + weekdayStart + ' - ' + weekdayEnd + '</td>'
       + '<td>' + weekendStart + ' - ' + weekendEnd + '</td>'
       + '<td>' + renderRestTags(restChecked) + '</td>'
-      + '<td>' + addedStrategyCC.length + ' 人</td>'
+      + '<td>' + addedStrategyCC.map(function(g){return g.name;}).join('、') + ' / ' + addedStrategyCC.reduce(function(sum,g){return sum + (g.count || 0);},0) + ' 人</td>'
       + '<td><span class="tag tag-gray">停用</span></td>'
       + '<td>2026-07-21 ' + new Date().getHours() + ':' + String(new Date().getMinutes()).padStart(2,'0') + '</td>'
       + '<td>wangyating</td>'
@@ -1359,22 +1386,76 @@ function submitStrategy() {
       + ' <button class="action-btn enable" onclick="showConfirm(\'enable-strategy\',\'' + name + '\')">启用</button>'
       + ' <button class="action-btn delete" onclick="showConfirm(\'delete-strategy\',\'' + name + '\')">删除</button></td>';
     document.getElementById('strategyTableBody').appendChild(newRow);
-    // Add CC to allCC
-    addedStrategyCC.forEach(function(c) {
-      // Remove from old source if exists
-      allCC = allCC.filter(function(x) { return x.account !== c.account; });
-      allCC.push({ name: c.name, account: c.account, source: name, weekday: weekdayStart + ' - ' + weekdayEnd, weekend: weekendStart + ' - ' + weekendEnd, rest: restChecked, status: '停用', type: 'strategy' });
+    // Demo only: expand selected groups into current CC overview so viewers can see the effect.
+    addedStrategyCC.forEach(function(g) {
+      var node = findOrgNode(orgTreeData, g.id);
+      getNodeMembers(node).forEach(function(c) {
+        allCC = allCC.filter(function(x) { return x.account !== c.account; });
+        allCC.push({ name: c.name, account: c.account, source: name, weekday: weekdayStart + ' - ' + weekdayEnd, weekend: weekendStart + ' - ' + weekendEnd, rest: restChecked, status: '停用', type: 'strategy' });
+      });
     });
     renderCCTable();
   }
 
   closeModal('addStrategyModal');
   if (isEdit) {
-    showToast('策略「' + name + '」已保存', 'success');
+    showToast('小组常规排班「' + name + '」已保存', 'success');
   } else {
-    showToast('新增策略「' + name + '」已保存为停用状态', 'success');
+    showToast('新增小组常规排班「' + name + '」已保存为停用状态', 'success');
     setTimeout(function(){ showConfirm('enable-created-strategy', name); }, 300);
   }
+}
+
+// =================== ADD SPECIAL SCHEDULE MODAL ===================
+function showAddSpecialScheduleModal() {
+  strategySelectionMode = 'special';
+  addedSpecialCC = [];
+  document.getElementById('specialCCEmpty').classList.remove('hidden');
+  document.getElementById('specialCCTable').classList.add('hidden');
+  document.getElementById('specialCCTableBody').innerHTML = '';
+  document.getElementById('specialCCCount').textContent = '';
+  if (document.getElementById('specialOrgPicker')) document.getElementById('specialOrgPicker').classList.add('hidden');
+  var tree = document.getElementById('specialOrgTree');
+  if (tree) tree.innerHTML = renderOrgNodes(orgTreeData, 0);
+  document.getElementById('specialScheduleModal').classList.remove('hidden');
+}
+
+function renderSpecialCCTable() {
+  var tbody = document.getElementById('specialCCTableBody');
+  if (addedSpecialCC.length === 0) {
+    document.getElementById('specialCCEmpty').classList.remove('hidden');
+    document.getElementById('specialCCTable').classList.add('hidden');
+    document.getElementById('specialCCCount').textContent = '';
+    return;
+  }
+  var type = document.querySelector('input[name="specialScheduleType"]:checked').value;
+  document.getElementById('specialCCEmpty').classList.add('hidden');
+  document.getElementById('specialCCTable').classList.remove('hidden');
+  document.getElementById('specialCCCount').textContent = '（' + addedSpecialCC.length + '人）';
+  tbody.innerHTML = addedSpecialCC.map(function(c, i) {
+    return '<tr><td><strong>' + c.name + '</strong></td><td>' + c.account + '</td><td><span class="tag ' + (type === '加班' ? 'tag-green' : 'tag-orange') + '">' + type + '</span></td><td><span class="tag tag-green">待保存</span></td>'
+      + '<td><button class="action-btn delete" onclick="removeSpecialCC(' + i + ')">移除</button></td></tr>';
+  }).join('');
+}
+
+function removeSpecialCC(idx) {
+  addedSpecialCC.splice(idx, 1);
+  renderSpecialCCTable();
+}
+
+document.addEventListener('change', function(e) {
+  if (e.target && e.target.name === 'specialScheduleType') renderSpecialCCTable();
+});
+
+function submitSpecialSchedule() {
+  var type = document.querySelector('input[name="specialScheduleType"]:checked').value;
+  var date = document.getElementById('specialScheduleDate').value;
+  var start = document.getElementById('specialScheduleStart').value;
+  var end = document.getElementById('specialScheduleEnd').value;
+  if (!date || !start || !end) { showToast('请填写日期和时间段', 'error'); return; }
+  if (!addedSpecialCC.length) { showToast('请至少选择 1 名人员', 'error'); return; }
+  closeModal('specialScheduleModal');
+  showToast('特殊排班已保存：' + type + '，' + date + ' ' + start + '-' + end + '，覆盖 ' + addedSpecialCC.length + ' 人', 'success');
 }
 
 // =================== ADD SINGLE CC MODAL ===================
@@ -1416,49 +1497,6 @@ function switchSingleCCMode(mode) {
     if (hintSearch) hintSearch.style.display = 'none';
     if (hintManual) hintManual.style.display = 'block';
   }
-}
-
-// 策略 CC 名单手动新增函数
-function showManualAddCC(context) {
-  var formId = context === 'strategy' ? 'manualAddCCFormStrategy' : 'manualAddCCFormSingle';
-  var form = document.getElementById(formId);
-  if (form) { form.classList.remove('hidden'); }
-}
-function hideManualAddCC(context) {
-  var formId = context === 'strategy' ? 'manualAddCCFormStrategy' : 'manualAddCCFormSingle';
-  var form = document.getElementById(formId);
-  if (form) { form.classList.add('hidden'); }
-  if (context === 'strategy') {
-    document.getElementById('manualCCNameStrategy').value = '';
-    document.getElementById('manualCCAccountStrategy').value = '';
-  }
-}
-function confirmManualAddCC(context) {
-  var name = document.getElementById('manualCCNameStrategy').value.trim();
-  var account = document.getElementById('manualCCAccountStrategy').value.trim();
-  if (!name || !account) { showToast('姓名和账号不能为空', 'warning'); return; }
-  // 检查重复
-  if (addedStrategyCC.some(function(c) { return c.account === account; })) {
-    showToast(name + ' 已在当前策略中', 'warning'); return;
-  }
-  // 检查是否已有排班
-  var existingCC = allCC.find(function(c) { return c.account === account; });
-  if (existingCC) {
-    pendingDuplicateCC = { name: name, account: account };
-    pendingDuplicateCallback = function() {
-      addedStrategyCC.push({ name: name, account: account });
-      renderStrategyCCTable();
-      hideManualAddCC(context);
-      showToast('已添加 ' + name, 'success');
-    };
-    document.getElementById('duplicateDesc').textContent = '「' + name + '」已存在于「' + existingCC.source + '」中，确认将从原排班移出并加入当前策略。';
-    document.getElementById('duplicateDialog').classList.remove('hidden');
-    return;
-  }
-  addedStrategyCC.push({ name: name, account: account });
-  renderStrategyCCTable();
-  hideManualAddCC(context);
-  showToast('已添加新 CC：' + name, 'success');
 }
 
 function searchCCForSingle() {
