@@ -196,7 +196,7 @@ tr.disabled-row td { color: #999; }
 .schedule-filter-card { background:#fff; padding:16px 20px; margin-bottom:16px; border-radius:0 0 8px 8px; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
 .schedule-summary-tags { display:none; }
 .schedule-summary-tags .summary-label { color:#666; font-size:13px; margin-right:2px; }
-.schedule-filter-row { display:grid; grid-template-columns: minmax(240px, 1.5fr) repeat(2, minmax(140px, 1fr)) auto; gap:12px; align-items:center; }
+.schedule-filter-row { display:grid; grid-template-columns: minmax(240px, 1.5fr) repeat(3, minmax(140px, 1fr)) auto; gap:12px; align-items:center; }
 .schedule-filter-row input, .schedule-filter-row select { height:36px; padding:0 12px; border:1px solid #dcdfe6; border-radius:4px; font-size:13px; outline:none; background:#fff; }
 .schedule-filter-row input:focus, .schedule-filter-row select:focus { border-color:#4ecdc4; }
 .schedule-search-wrap { display:flex; align-items:center; height:36px; border:1px solid #dcdfe6; border-radius:4px; background:#fff; overflow:hidden; }
@@ -420,7 +420,7 @@ tr.highlight-row { background: #f0fffe; }
             <span style="font-size: 12px; color: #999;" id="specialScheduleCount">共 2 条</span>
           </div>
           <table>
-            <thead><tr><th>排班类型</th><th>覆盖日期</th><th>覆盖时间段</th><th>适用人员</th><th>状态</th><th>创建人</th><th>操作</th></tr></thead>
+            <thead><tr><th>排班名称</th><th>排班类型</th><th>覆盖日期</th><th>覆盖时间段</th><th>适用人员</th><th>状态</th><th>创建人</th><th>操作</th></tr></thead>
             <tbody id="specialScheduleTableBody"></tbody>
           </table>
           <div class="pagination" id="specialSchedulePagination">共 2 条 &nbsp; 10条/页</div>
@@ -642,6 +642,13 @@ tr.highlight-row { background: #f0fffe; }
       <button class="modal-close" onclick="closeModal('specialScheduleModal')">×</button>
     </div>
     <div class="modal-body">
+      <div class="form-group">
+        <div class="form-label">排班名称</div>
+        <div class="form-control">
+          <input type="text" id="specialScheduleName" placeholder="请输入特殊排班名称，如：销售一组国庆加班" maxlength="30">
+          <div class="form-hint">最多 30 个字符，用于在列表和详情中识别本次特殊排班</div>
+        </div>
+      </div>
       <div class="form-group">
         <div class="form-label">排班类型</div>
         <div class="form-control">
@@ -967,12 +974,12 @@ var addedSpecialCC = [];
 var editingSpecialScheduleId = null;
 var activeScheduleTab = 'group';
 var specialSchedules = [
-  { id: 'sp1', type: '加班', date: '2026-07-27', start: '19:00', end: '22:00', allDay: false, people: [
+  { id: 'sp1', name: '销售一组晚间加班', type: '加班', date: '2026-07-27', start: '19:00', end: '22:00', allDay: false, people: [
     { name: '沈艳梅', account: 'xn_shenyanmei@demo.com' },
     { name: '张玉峰', account: 'xn_zhangyufeng@demo.com' },
     { name: '王玉红', account: 'xn_wangyuhong@demo.com' }
   ], status: '启用', creator: 'wangyating' },
-  { id: 'sp2', type: '放假', date: '2026-08-01', start: '00:00', end: '23:59', allDay: true, people: [
+  { id: 'sp2', name: '8月临时放假', type: '放假', date: '2026-08-01', start: '00:00', end: '23:59', allDay: true, people: [
     { name: '李小华', account: 'xn_lixiaohua@demo.com' },
     { name: '陈晓丽', account: 'xn_chenxiaoli@demo.com' }
   ], status: '停用', creator: 'wangyating' }
@@ -1046,7 +1053,7 @@ function renderScheduleControls() {
       + '<button class="btn" onclick="resetScheduleFilters()">重置</button>';
   } else {
     tags.innerHTML = '';
-    row.innerHTML = renderSearchBox('搜索适用人员 / 创建人')
+    row.innerHTML = renderSearchBox('搜索排班名称 / 适用人员 / 创建人')
       + '<select id="scheduleTypeFilter" onchange="applyScheduleFilters()"><option value="">全部类型</option><option value="加班">加班</option><option value="放假">放假</option></select>'
       + '<select id="scheduleStatusFilter" onchange="applyScheduleFilters()"><option value="">全部状态</option><option value="启用">启用</option><option value="停用">停用</option></select>'
       + '<input id="scheduleDateFilter" type="date" onchange="applyScheduleFilters()">'
@@ -1096,7 +1103,7 @@ function renderSpecialScheduleTable() {
   var f = activeScheduleTab === 'special' ? getActiveFilterValues() : {q:'', status:'', type:'', date:''};
   var data = specialSchedules.filter(function(item) {
     var people = normalizeSpecialPeople(item.people);
-    var text = (item.type + ' ' + item.date + ' ' + item.start + ' ' + item.end + ' ' + people.map(function(p){ return p.name + ' ' + p.account; }).join(' ') + ' ' + item.status + ' ' + item.creator).toLowerCase();
+    var text = ((item.name || '') + ' ' + item.type + ' ' + item.date + ' ' + item.start + ' ' + item.end + ' ' + people.map(function(p){ return p.name + ' ' + p.account; }).join(' ') + ' ' + item.status + ' ' + item.creator).toLowerCase();
     var matchQ = !f.q || text.includes(f.q);
     var matchType = !f.type || item.type === f.type;
     var matchStatus = !f.status || item.status === f.status;
@@ -1114,6 +1121,7 @@ function renderSpecialScheduleTable() {
       ? '<button class="action-btn stop" onclick="showConfirm(\'stop-special\',\'' + item.id + '\')">停用</button>'
       : '<button class="action-btn enable" onclick="showConfirm(\'enable-special\',\'' + item.id + '\')">启用</button>';
     return '<tr data-special-id="' + item.id + '" data-status="' + item.status + '">'
+      + '<td><strong>' + (item.name || '未命名特殊排班') + '</strong></td>'
       + '<td>' + typeTag + '</td>'
       + '<td><span class="tag tag-purple">' + item.date + '</span></td>'
       + '<td><span class="tag tag-purple">' + timeText + '</span></td>'
@@ -1160,10 +1168,11 @@ function showSpecialScheduleDetail(id) {
     return '<tr><td><strong>' + p.name + '</strong></td><td>' + p.account + '</td><td>BCC</td><td><span class="tag tag-green">已选择</span></td></tr>';
   }).join('');
 
-  document.getElementById('strategyDetailTitle').textContent = '特殊排班详情 — ' + item.type;
+  document.getElementById('strategyDetailTitle').textContent = '特殊排班详情 — ' + (item.name || item.type);
   document.getElementById('strategyDetailBody').innerHTML =
     '<div style="background:#f9fafb;border-radius:6px;padding:16px 20px;margin-bottom:16px;">'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
+    + '<div><span style="color:#999;font-size:12px;">排班名称</span><br><strong>' + (item.name || '未命名特殊排班') + '</strong></div>'
     + '<div><span style="color:#999;font-size:12px;">排班类型</span><br><span class="tag ' + typeClass + '">' + item.type + '</span></div>'
     + '<div><span style="color:#999;font-size:12px;">状态</span><br>' + statusTag + '</div>'
     + '<div><span style="color:#999;font-size:12px;">覆盖日期</span><br><span class="tag tag-purple">' + item.date + '</span></div>'
@@ -1189,6 +1198,7 @@ function showEditSpecialScheduleModal(id) {
   editingSpecialScheduleId = id;
   addedSpecialCC = normalizeSpecialPeople(item.people);
   document.getElementById('specialScheduleModalTitle').textContent = '编辑特殊排班';
+  document.getElementById('specialScheduleName').value = item.name || '';
   document.querySelector('input[name="specialScheduleType"][value="' + item.type + '"]').checked = true;
   document.getElementById('specialScheduleDate').value = item.date;
   document.querySelector('input[name="specialTimeMode"][value="' + (item.allDay ? 'allDay' : 'range') + '"]').checked = true;
@@ -1509,9 +1519,15 @@ function renderOrgPicker() {
   tree.innerHTML = renderOrgNodes(orgTreeData, 0);
 }
 
-function toggleOrgNode(id) {
+function toggleOrgNode(id, source) {
   collapsedOrgNodeIds[id] = !collapsedOrgNodeIds[id];
-  renderOrgPicker();
+  var orgPicker = document.getElementById('orgPicker');
+  var specialPicker = document.getElementById('specialOrgPicker');
+  if (!source || source === 'group' || (orgPicker && !orgPicker.classList.contains('hidden'))) renderOrgPicker();
+  if (!source || source === 'special' || (specialPicker && !specialPicker.classList.contains('hidden'))) {
+    var specialTree = document.getElementById('specialOrgTree');
+    if (specialTree) specialTree.innerHTML = renderOrgNodes(orgTreeData, 0);
+  }
 }
 
 function renderOrgNodes(nodes, level) {
@@ -1521,17 +1537,17 @@ function renderOrgNodes(nodes, level) {
     var childCount = children.length;
     var isCollapsed = !!collapsedOrgNodeIds[node.id];
     var caret = children.length
-      ? '<span class="org-caret" onclick="toggleOrgNode(\'' + node.id + '\')" title="' + (isCollapsed ? '展开' : '收起') + '">' + (isCollapsed ? '▸' : '▾') + '</span>'
+      ? '<span class="org-caret" onclick="event.stopPropagation(); toggleOrgNode(\'' + node.id + '\', strategySelectionMode)" title="' + (isCollapsed ? '展开' : '收起') + '">' + (isCollapsed ? '▸' : '▾') + '</span>'
       : '<span class="org-caret org-caret-placeholder"></span>';
     var html = '<div class="org-node">'
       + '<div class="org-row org-indent-' + Math.min(level, 4) + '">'
       + '<div class="org-name">' + caret + '<strong>' + node.name + '</strong></div>'
       + '<span class="org-count">' + (childCount ? childCount + '个下级 · ' : '') + nodeMembers.length + '人</span>'
       + (strategySelectionMode === 'group'
-        ? '<div class="org-actions"><button class="btn btn-sm btn-primary" onclick="chooseGroupForStrategy(\'' + node.id + '\')">选择小组</button></div>'
+        ? '<div class="org-actions"><button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); chooseGroupForStrategy(\'' + node.id + '\')">选择小组</button></div>'
         : (strategySelectionMode === 'special'
-          ? '<div class="org-actions org-actions-split"><button class="btn btn-sm" onclick="selectAllSpecialMembersFromOrg(\'' + node.id + '\')">全选</button><button class="btn btn-sm btn-primary" onclick="openOrgMemberModal(\'' + node.id + '\')">选择人员</button></div>'
-          : '<div class="org-actions"><button class="btn btn-sm btn-primary" onclick="openOrgMemberModal(\'' + node.id + '\')">选择人员</button></div>'))
+          ? '<div class="org-actions org-actions-split"><button class="btn btn-sm" onclick="event.stopPropagation(); selectAllSpecialMembersFromOrg(\'' + node.id + '\')">全选</button><button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); openOrgMemberModal(\'' + node.id + '\')">选择人员</button></div>'
+          : '<div class="org-actions"><button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); openOrgMemberModal(\'' + node.id + '\')">选择人员</button></div>'))
       + '</div>';
     if (children.length && !isCollapsed) html += renderOrgNodes(children, level + 1);
     html += '</div>';
@@ -1766,6 +1782,7 @@ function showAddSpecialScheduleModal() {
   editingSpecialScheduleId = null;
   addedSpecialCC = [];
   document.getElementById('specialScheduleModalTitle').textContent = '新增特殊排班';
+  document.getElementById('specialScheduleName').value = '';
   document.querySelector('input[name="specialScheduleType"][value="加班"]').checked = true;
   document.getElementById('specialScheduleDate').value = '2026-07-27';
   document.querySelector('input[name="specialTimeMode"][value="range"]').checked = true;
@@ -1810,19 +1827,21 @@ document.addEventListener('change', function(e) {
 });
 
 function submitSpecialSchedule() {
+  var name = document.getElementById('specialScheduleName').value.trim();
   var type = document.querySelector('input[name="specialScheduleType"]:checked').value;
   var date = document.getElementById('specialScheduleDate').value;
   var modeEl = document.querySelector('input[name="specialTimeMode"]:checked');
   var allDay = modeEl && modeEl.value === 'allDay';
   var start = allDay ? '00:00' : document.getElementById('specialScheduleStart').value;
   var end = allDay ? '23:59' : document.getElementById('specialScheduleEnd').value;
+  if (!name) { showToast('请填写排班名称', 'error'); return; }
   if (!date || (!allDay && (!start || !end))) { showToast('请填写日期和时间段', 'error'); return; }
   if (!allDay && start >= end) { showToast('结束时间必须晚于开始时间', 'error'); return; }
   if (!addedSpecialCC.length) { showToast('请至少选择 1 名人员', 'error'); return; }
   if (editingSpecialScheduleId) {
     var item = specialSchedules.find(function(x){ return x.id === editingSpecialScheduleId; });
     if (item) {
-      item.type = type; item.date = date; item.start = start; item.end = end; item.allDay = allDay; item.people = addedSpecialCC.map(function(c){ return { name: c.name, account: c.account }; });
+      item.name = name; item.type = type; item.date = date; item.start = start; item.end = end; item.allDay = allDay; item.people = addedSpecialCC.map(function(c){ return { name: c.name, account: c.account }; });
     }
     applyScheduleFilters();
     closeModal('specialScheduleModal');
@@ -1830,7 +1849,7 @@ function submitSpecialSchedule() {
     editingSpecialScheduleId = null;
   } else {
     var id = 'sp' + (new Date().getTime());
-    specialSchedules.push({ id: id, type: type, date: date, start: start, end: end, allDay: allDay, people: addedSpecialCC.map(function(c){ return { name: c.name, account: c.account }; }), status: '停用', creator: 'wangyating' });
+    specialSchedules.push({ id: id, name: name, type: type, date: date, start: start, end: end, allDay: allDay, people: addedSpecialCC.map(function(c){ return { name: c.name, account: c.account }; }), status: '停用', creator: 'wangyating' });
     applyScheduleFilters();
     closeModal('specialScheduleModal');
     showToast('特殊排班已保存为停用状态：' + type + '，覆盖 ' + addedSpecialCC.length + ' 人', 'success');
