@@ -181,19 +181,16 @@ tr.disabled-row td { color: #999; }
 .toast.warning { background: #e67e22; }
 .toast.error { background: #e74c3c; }
 
-/* Schedule category tabs */
-.schedule-tabs-wrap { background: #fff; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
-.schedule-tabs { display: flex; border-bottom: 1px solid #f0f0f0; background: #fbfcfd; }
-.schedule-tab { padding: 12px 20px; cursor: pointer; font-size: 14px; color: #666; border-right: 1px solid #f0f0f0; border-bottom: 2px solid transparent; transition: all 0.2s; }
-.schedule-tab:hover { color: #4ecdc4; background: #f0faf5; }
-.schedule-tab.active { color: #4ecdc4; background: #fff; border-bottom-color: #4ecdc4; font-weight: 600; }
-.schedule-tab-actions { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.schedule-tab-desc { color: #666; font-size: 13px; line-height: 1.6; }
-.status-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
-.status-card { background: #fff; border-radius: 8px; padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-.status-card .num { font-size: 24px; font-weight: 700; color: #4ecdc4; line-height: 1.2; }
-.status-card .label { margin-top: 4px; color: #666; font-size: 12px; }
-@media (max-width: 900px) { .schedule-tab-actions { align-items: flex-start; flex-direction: column; } .status-card-grid { grid-template-columns: 1fr; } }
+/* Schedule action area */
+.schedule-action-bar { background: #fff; border-radius: 8px; margin-bottom: 16px; padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.schedule-action-desc { color: #666; font-size: 13px; line-height: 1.7; }
+.schedule-action-desc .tag { margin-right: 6px; }
+.schedule-action-buttons { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.tag.tag-purple { background: #f4f0ff; color: #722ed1; }
+.tag.tag-orange { background: #fff7e6; color: #d46b08; }
+.tag.tag-red { background: #fff1f0; color: #cf1322; }
+@media (max-width: 900px) { .schedule-action-bar { align-items: flex-start; flex-direction: column; } .schedule-action-buttons { justify-content: flex-start; } }
 
 
 /* Hidden */
@@ -251,27 +248,18 @@ tr.highlight-row { background: #f0fffe; }
         <button class="btn" onclick="showLogModal()">📋 操作日志</button>
       </div>
 
-      <!-- Schedule Tabs -->
-      <div class="schedule-tabs-wrap">
-        <div class="schedule-tabs">
-          <div class="schedule-tab active" id="tabGroup" onclick="switchScheduleTab('group')">🏢 小组常规排班</div>
-          <div class="schedule-tab" id="tabPersonal" onclick="switchScheduleTab('personal')">👤 个人常规排班</div>
-          <div class="schedule-tab" id="tabSpecial" onclick="switchScheduleTab('special')">⭐ 特殊排班</div>
+      <!-- Schedule Actions -->
+      <div class="schedule-action-bar">
+        <div class="schedule-action-desc">
+          <span class="tag tag-green">小组常规</span> 按小组配置默认服务时间；
+          <span class="tag tag-orange">个人常规</span> 单个 CC 独立配置；
+          <span class="tag tag-red">特殊排班</span> 覆盖加班 / 放假，优先级最高。
         </div>
-        <div class="schedule-tab-actions">
-          <div class="schedule-tab-desc" id="scheduleTabDesc">小组常规排班用于为组织小组配置默认服务时间；后续架构加人后，新成员默认跟随该小组排班。</div>
-          <div class="btn-group">
-            <button class="btn btn-primary" id="groupAddBtn" onclick="showAddStrategyModal()">+ 新增小组常规排班</button>
-            <button class="btn btn-primary hidden" id="personalAddBtn" onclick="showAddSingleCCModal()">+ 新增个人常规排班</button>
-            <button class="btn btn-primary hidden" id="specialAddBtn" onclick="showAddSpecialScheduleModal()">+ 新增特殊排班</button>
-          </div>
+        <div class="schedule-action-buttons">
+          <button class="btn btn-primary" id="groupAddBtn" onclick="showAddStrategyModal()">+ 新增小组常规排班</button>
+          <button class="btn btn-primary" id="personalAddBtn" onclick="showAddSingleCCModal()">+ 新增个人常规排班</button>
+          <button class="btn btn-primary" id="specialAddBtn" onclick="showAddSpecialScheduleModal()">+ 新增特殊排班</button>
         </div>
-      </div>
-
-      <div class="status-card-grid" id="scheduleStats">
-        <div class="status-card"><div class="num" id="statTotal">4</div><div class="label">当前类型配置数</div></div>
-        <div class="status-card"><div class="num" id="statEnabled">3</div><div class="label">启用中</div></div>
-        <div class="status-card"><div class="num" id="statCoverage">5</div><div class="label" id="statCoverageLabel">覆盖 CC 数</div></div>
       </div>
 
       <div class="schedule-panel" id="groupSchedulePanel">
@@ -298,10 +286,10 @@ tr.highlight-row { background: #f0fffe; }
           <tbody id="strategyTableBody">
             <tr data-name="标准班" data-status="启用">
               <td><strong>标准班</strong></td>
-              <td>13:00 - 22:00</td>
-              <td>10:30 - 22:00</td>
+              <td><span class="tag tag-purple">13:00 - 22:00</span></td>
+              <td><span class="tag tag-purple">10:30 - 22:00</span></td>
               <td><span class="tag tag-blue">周一</span> <span class="tag tag-blue">周二</span></td>
-              <td>40 人</td>
+              <td><span class="tag tag-green">销售一组</span> <span class="tag tag-blue">40 人</span></td>
               <td><span class="tag tag-green">启用</span></td>
               <td>2026-07-21 14:30</td>
               <td>wangyating</td>
@@ -314,10 +302,10 @@ tr.highlight-row { background: #f0fffe; }
             </tr>
             <tr data-name="早班" data-status="启用">
               <td><strong>早班</strong></td>
-              <td>10:00 - 19:00</td>
-              <td>10:00 - 19:00</td>
+              <td><span class="tag tag-purple">10:00 - 19:00</span></td>
+              <td><span class="tag tag-purple">10:00 - 19:00</span></td>
               <td><span class="tag tag-blue">周一</span></td>
-              <td>8 人</td>
+              <td><span class="tag tag-green">销售二组</span> <span class="tag tag-blue">8 人</span></td>
               <td><span class="tag tag-green">启用</span></td>
               <td>2026-07-21 14:35</td>
               <td>wangyating</td>
@@ -330,10 +318,10 @@ tr.highlight-row { background: #f0fffe; }
             </tr>
             <tr data-name="周末加长班" data-status="启用">
               <td><strong>周末加长班</strong></td>
-              <td>13:00 - 22:00</td>
-              <td>09:00 - 22:00</td>
+              <td><span class="tag tag-purple">13:00 - 22:00</span></td>
+              <td><span class="tag tag-purple">09:00 - 22:00</span></td>
               <td><span class="tag tag-blue">周一</span></td>
-              <td>6 人</td>
+              <td><span class="tag tag-green">销售三组</span> <span class="tag tag-blue">6 人</span></td>
               <td><span class="tag tag-green">启用</span></td>
               <td>2026-07-21 15:00</td>
               <td>wangyating</td>
@@ -346,10 +334,10 @@ tr.highlight-row { background: #f0fffe; }
             </tr>
             <tr data-name="新人班" data-status="停用" class="disabled-row">
               <td><strong>新人班</strong></td>
-              <td>14:00 - 21:00</td>
-              <td>14:00 - 21:00</td>
+              <td><span class="tag tag-purple">14:00 - 21:00</span></td>
+              <td><span class="tag tag-purple">14:00 - 21:00</span></td>
               <td><span class="tag tag-blue">周六</span> <span class="tag tag-blue">周日</span></td>
-              <td>3 人</td>
+              <td><span class="tag tag-green">新人组</span> <span class="tag tag-blue">3 人</span></td>
               <td><span class="tag tag-gray">停用</span></td>
               <td>2026-07-20 10:00</td>
               <td>wangyating</td>
@@ -367,7 +355,7 @@ tr.highlight-row { background: #f0fffe; }
 
       </div>
 
-      <div class="schedule-panel hidden" id="personalSchedulePanel">
+      <div class="schedule-panel" id="personalSchedulePanel">
       <!-- Section 2: 个人常规排班 -->
       <div class="table-container" id="ccOverviewTable">
         <div class="table-header">
@@ -394,7 +382,7 @@ tr.highlight-row { background: #f0fffe; }
       </div>
       </div>
 
-      <div class="schedule-panel hidden" id="specialSchedulePanel">
+      <div class="schedule-panel" id="specialSchedulePanel">
         <div class="table-container" id="specialScheduleTableContainer">
           <div class="table-header">
             <div class="table-title">特殊排班</div>
@@ -949,50 +937,9 @@ var specialSchedules = [
   { id: 'sp2', type: '放假', date: '2026-08-01', start: '00:00', end: '23:59', people: ['李小华','陈晓丽'], status: '停用', creator: 'wangyating' }
 ];
 
-// =================== SCHEDULE TABS ===================
-function switchScheduleTab(tab) {
-  activeScheduleTab = tab;
-  document.getElementById('tabGroup').classList.toggle('active', tab === 'group');
-  document.getElementById('tabPersonal').classList.toggle('active', tab === 'personal');
-  document.getElementById('tabSpecial').classList.toggle('active', tab === 'special');
-  document.getElementById('groupAddBtn').classList.toggle('hidden', tab !== 'group');
-  document.getElementById('personalAddBtn').classList.toggle('hidden', tab !== 'personal');
-  document.getElementById('specialAddBtn').classList.toggle('hidden', tab !== 'special');
-  document.getElementById('groupSchedulePanel').classList.toggle('hidden', tab !== 'group');
-  document.getElementById('personalSchedulePanel').classList.toggle('hidden', tab !== 'personal');
-  document.getElementById('specialSchedulePanel').classList.toggle('hidden', tab !== 'special');
-  var desc = {
-    group: '小组常规排班用于为组织小组配置默认服务时间；后续架构加人后，新成员默认跟随该小组排班。',
-    personal: '个人常规排班用于给单个 CC 配置独立服务时间；配置后与小组常规排班互斥。',
-    special: '特殊排班用于覆盖加班、放假、节假日等临时场景，优先级高于常规排班。'
-  };
-  document.getElementById('scheduleTabDesc').textContent = desc[tab];
-  if (tab === 'personal') renderCCTable(allCC.filter(function(c){ return c.type === 'single'; }));
-  if (tab === 'group') renderCCTable(allCC.filter(function(c){ return c.type === 'strategy'; }));
-  if (tab === 'special') renderSpecialScheduleTable();
-  updateScheduleStats();
-}
-
+// =================== SCHEDULE DISPLAY ===================
 function updateScheduleStats() {
-  if (!document.getElementById('statTotal')) return;
-  if (activeScheduleTab === 'group') {
-    var rows = Array.from(document.querySelectorAll('#strategyTableBody tr'));
-    document.getElementById('statTotal').textContent = rows.length;
-    document.getElementById('statEnabled').textContent = rows.filter(function(r){ return r.getAttribute('data-status') === '启用'; }).length;
-    document.getElementById('statCoverage').textContent = allCC.filter(function(c){ return c.type === 'strategy'; }).length;
-    document.getElementById('statCoverageLabel').textContent = '覆盖 CC 数';
-  } else if (activeScheduleTab === 'personal') {
-    var personal = allCC.filter(function(c){ return c.type === 'single'; });
-    document.getElementById('statTotal').textContent = personal.length;
-    document.getElementById('statEnabled').textContent = personal.filter(function(c){ return c.status === '启用'; }).length;
-    document.getElementById('statCoverage').textContent = personal.length;
-    document.getElementById('statCoverageLabel').textContent = '独立排班 CC 数';
-  } else {
-    document.getElementById('statTotal').textContent = specialSchedules.length;
-    document.getElementById('statEnabled').textContent = specialSchedules.filter(function(item){ return item.status === '启用'; }).length;
-    document.getElementById('statCoverage').textContent = specialSchedules.reduce(function(sum, item){ return sum + item.people.length; }, 0);
-    document.getElementById('statCoverageLabel').textContent = '累计覆盖人次';
-  }
+  // 已取消数量导航展示，仅保留三个配置列表。
 }
 
 function renderSpecialScheduleTable() {
@@ -1001,18 +948,25 @@ function renderSpecialScheduleTable() {
   tbody.innerHTML = specialSchedules.map(function(item) {
     var statusTag = item.status === '启用' ? '<span class="tag tag-green">启用</span>' : '<span class="tag tag-gray">停用</span>';
     var typeTag = item.type === '加班' ? '<span class="tag tag-green">加班</span>' : '<span class="tag tag-orange">放假</span>';
+    var peopleTags = item.people.slice(0, 3).map(function(name) { return '<span class="tag tag-blue">' + name + '</span>'; }).join(' ');
+    if (item.people.length > 3) peopleTags += ' <span class="tag tag-gray">等 ' + item.people.length + ' 人</span>';
     var toggleBtn = item.status === '启用'
       ? '<button class="action-btn stop" onclick="showConfirm(\'stop-special\',\'' + item.id + '\')">停用</button>'
       : '<button class="action-btn enable" onclick="showConfirm(\'enable-special\',\'' + item.id + '\')">启用</button>';
     return '<tr data-special-id="' + item.id + '" data-status="' + item.status + '">'
-      + '<td>' + typeTag + '</td><td><strong>' + item.date + '</strong></td><td>' + item.start + ' - ' + item.end + '</td>'
-      + '<td>' + item.people.slice(0, 3).join('、') + (item.people.length > 3 ? ' 等' : '') + ' / ' + item.people.length + ' 人</td>'
-      + '<td><span class="tag tag-red">最高</span></td><td>' + statusTag + '</td><td>' + item.creator + '</td>'
+      + '<td>' + typeTag + '</td>'
+      + '<td><span class="tag tag-purple">' + item.date + '</span></td>'
+      + '<td><span class="tag tag-purple">' + item.start + ' - ' + item.end + '</span></td>'
+      + '<td><div class="tag-list">' + peopleTags + '</div></td>'
+      + '<td><span class="tag tag-red">最高优先级</span></td><td>' + statusTag + '</td><td>' + item.creator + '</td>'
       + '<td>' + toggleBtn + ' <button class="action-btn delete" onclick="showConfirm(\'delete-special\',\'' + item.id + '\')">删除</button></td></tr>';
   }).join('');
   document.getElementById('specialScheduleCount').textContent = '共 ' + specialSchedules.length + ' 条';
   document.getElementById('specialSchedulePagination').innerHTML = '共 ' + specialSchedules.length + ' 条 &nbsp; 10条/页';
-  updateScheduleStats();
+}
+
+function switchScheduleTab(tab) {
+  // 保留空函数兼容旧调用；当前页面不再使用 Tab 切换。
 }
 
 // =================== TOAST ===================
@@ -1085,10 +1039,8 @@ function renderCCTable(filtered) {
 }
 
 // Initial render
-renderCCTable(allCC.filter(function(c){ return c.type === 'strategy'; }));
+renderCCTable(allCC.filter(function(c){ return c.type === 'single'; }));
 renderSpecialScheduleTable();
-switchScheduleTab('group'); // default active tab
-updateScheduleStats();
 
 // =================== TOOLBAR SEARCH ===================
 function doToolbarSearch() {
