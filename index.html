@@ -181,6 +181,20 @@ tr.disabled-row td { color: #999; }
 .toast.warning { background: #e67e22; }
 .toast.error { background: #e74c3c; }
 
+/* Schedule category tabs */
+.schedule-tabs-wrap { background: #fff; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
+.schedule-tabs { display: flex; border-bottom: 1px solid #f0f0f0; background: #fbfcfd; }
+.schedule-tab { padding: 12px 20px; cursor: pointer; font-size: 14px; color: #666; border-right: 1px solid #f0f0f0; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.schedule-tab:hover { color: #4ecdc4; background: #f0faf5; }
+.schedule-tab.active { color: #4ecdc4; background: #fff; border-bottom-color: #4ecdc4; font-weight: 600; }
+.schedule-tab-actions { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.schedule-tab-desc { color: #666; font-size: 13px; line-height: 1.6; }
+.status-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.status-card { background: #fff; border-radius: 8px; padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.status-card .num { font-size: 24px; font-weight: 700; color: #4ecdc4; line-height: 1.2; }
+.status-card .label { margin-top: 4px; color: #666; font-size: 12px; }
+@media (max-width: 900px) { .schedule-tab-actions { align-items: flex-start; flex-direction: column; } .status-card-grid { grid-template-columns: 1fr; } }
+
 
 /* Hidden */
 .hidden { display: none !important; }
@@ -837,41 +851,41 @@ tr.highlight-row { background: #f0fffe; }
 <script>
 // =================== DATA ===================
 var allCC = [
-  { name: '沈艳梅', account: 'xn_shenyanmei@vipkid.com.cn', source: '标准班', weekday: '13:00 - 22:00', weekend: '10:30 - 22:00', rest: '周一、周二', status: '启用', type: 'strategy' },
-  { name: '张玉峰', account: 'xn_zhangyufeng@vipkid.com.cn', source: '标准班', weekday: '13:00 - 22:00', weekend: '10:30 - 22:00', rest: '周一', status: '启用', type: 'strategy' },
-  { name: '王玉红', account: 'xn_wangyuhong@vipkid.com.cn', source: '标准班', weekday: '13:00 - 22:00', weekend: '10:30 - 22:00', rest: '周一', status: '启用', type: 'strategy' },
-  { name: '刘小刚', account: 'xn_liuxiaogang@vipkid.com.cn', source: '单独排班', weekday: '14:00 - 22:00', weekend: '10:30 - 22:00', rest: '周三', status: '启用', type: 'single' },
-  { name: '李小华', account: 'xn_lixiaohua@vipkid.com.cn', source: '早班', weekday: '10:00 - 19:00', weekend: '10:00 - 19:00', rest: '周一', status: '启用', type: 'strategy' },
-  { name: '赵丽娜', account: 'xn_zhaolinana@vipkid.com.cn', source: '标准班', weekday: '13:00 - 22:00', weekend: '10:30 - 22:00', rest: '周一', status: '停用', type: 'strategy' },
-  { name: '陈晓丽', account: 'xn_chenxiaoli@vipkid.com.cn', source: '单独排班', weekday: '13:00 - 21:00', weekend: '10:30 - 21:00', rest: '周四', status: '停用', type: 'single' }
+  { name: '沈艳梅', account: 'xn_shenyanmei@demo.com', source: '标准班', weekday: '13:00 - 22:00', weekend: '10:30 - 22:00', rest: '周一、周二', status: '启用', type: 'strategy' },
+  { name: '张玉峰', account: 'xn_zhangyufeng@demo.com', source: '标准班', weekday: '13:00 - 22:00', weekend: '10:30 - 22:00', rest: '周一', status: '启用', type: 'strategy' },
+  { name: '王玉红', account: 'xn_wangyuhong@demo.com', source: '标准班', weekday: '13:00 - 22:00', weekend: '10:30 - 22:00', rest: '周一', status: '启用', type: 'strategy' },
+  { name: '刘小刚', account: 'xn_liuxiaogang@demo.com', source: '单独排班', weekday: '14:00 - 22:00', weekend: '10:30 - 22:00', rest: '周三', status: '启用', type: 'single' },
+  { name: '李小华', account: 'xn_lixiaohua@demo.com', source: '早班', weekday: '10:00 - 19:00', weekend: '10:00 - 19:00', rest: '周一', status: '启用', type: 'strategy' },
+  { name: '赵丽娜', account: 'xn_zhaolinana@demo.com', source: '标准班', weekday: '13:00 - 22:00', weekend: '10:30 - 22:00', rest: '周一', status: '停用', type: 'strategy' },
+  { name: '陈晓丽', account: 'xn_chenxiaoli@demo.com', source: '单独排班', weekday: '13:00 - 21:00', weekend: '10:30 - 21:00', rest: '周四', status: '停用', type: 'single' }
 ];
 
 // All available CC (for search)
 var allAvailableCC = [
-  { name: '沈艳梅', account: 'xn_shenyanmei@vipkid.com.cn' },
-  { name: '张玉峰', account: 'xn_zhangyufeng@vipkid.com.cn' },
-  { name: '王玉红', account: 'xn_wangyuhong@vipkid.com.cn' },
-  { name: '刘小刚', account: 'xn_liuxiaogang@vipkid.com.cn' },
-  { name: '李小华', account: 'xn_lixiaohua@vipkid.com.cn' },
-  { name: '赵丽娜', account: 'xn_zhaolinana@vipkid.com.cn' },
-  { name: '陈晓丽', account: 'xn_chenxiaoli@vipkid.com.cn' },
-  { name: '周建国', account: 'xn_zhoujianguo@vipkid.com.cn' },
-  { name: '孙丽萍', account: 'xn_sunliping@vipkid.com.cn' },
-  { name: '马小军', account: 'xn_maxiaojun@vipkid.com.cn' },
-  { name: '黄婷婷', account: 'xn_huangtingting@vipkid.com.cn' },
-  { name: '吴小燕', account: 'xn_wuxiaoyan@vipkid.com.cn' },
-  { name: '李宏宇P', account: 'lihongyu@vipkid.com.cn' },
-  { name: '冯杰P', account: 'fengjie@vipkid.com.cn' },
-  { name: '马文彪P', account: 'mawenbiao@vipkid.com.cn' },
-  { name: '王星凯P', account: 'wangxingkai@vipkid.com.cn' },
-  { name: '宋子健P', account: 'songzijian@vipkid.com.cn' },
-  { name: '邓春彦P', account: 'dengchunyan@vipkid.com.cn' },
-  { name: '曾小欢P', account: 'zengxiaohuan@vipkid.com.cn' },
-  { name: '刘始贵P', account: 'liushigui@vipkid.com.cn' },
-  { name: '张世达P', account: 'zhangshida@vipkid.com.cn' },
-  { name: '付正勇P', account: 'fuzhengyong@vipkid.com.cn' },
-  { name: '黄丽P', account: 'huangli@vipkid.com.cn' },
-  { name: '常钰琪P', account: 'changyuqi@vipkid.com.cn' }
+  { name: '沈艳梅', account: 'xn_shenyanmei@demo.com' },
+  { name: '张玉峰', account: 'xn_zhangyufeng@demo.com' },
+  { name: '王玉红', account: 'xn_wangyuhong@demo.com' },
+  { name: '刘小刚', account: 'xn_liuxiaogang@demo.com' },
+  { name: '李小华', account: 'xn_lixiaohua@demo.com' },
+  { name: '赵丽娜', account: 'xn_zhaolinana@demo.com' },
+  { name: '陈晓丽', account: 'xn_chenxiaoli@demo.com' },
+  { name: '周建国', account: 'xn_zhoujianguo@demo.com' },
+  { name: '孙丽萍', account: 'xn_sunliping@demo.com' },
+  { name: '马小军', account: 'xn_maxiaojun@demo.com' },
+  { name: '黄婷婷', account: 'xn_huangtingting@demo.com' },
+  { name: '吴小燕', account: 'xn_wuxiaoyan@demo.com' },
+  { name: '李宏宇P', account: 'lihongyu@demo.com' },
+  { name: '冯杰P', account: 'fengjie@demo.com' },
+  { name: '马文彪P', account: 'mawenbiao@demo.com' },
+  { name: '王星凯P', account: 'wangxingkai@demo.com' },
+  { name: '宋子健P', account: 'songzijian@demo.com' },
+  { name: '邓春彦P', account: 'dengchunyan@demo.com' },
+  { name: '曾小欢P', account: 'zengxiaohuan@demo.com' },
+  { name: '刘始贵P', account: 'liushigui@demo.com' },
+  { name: '张世达P', account: 'zhangshida@demo.com' },
+  { name: '付正勇P', account: 'fuzhengyong@demo.com' },
+  { name: '黄丽P', account: 'huangli@demo.com' },
+  { name: '常钰琪P', account: 'changyuqi@demo.com' }
 ];
 
 // Demo org tree based on current org-structure page
@@ -880,30 +894,30 @@ var orgTreeData = [
   { id: 'biz', name: '业务部', children: [
     { id: 'sales', name: 'SayABC-销售中心', children: [
       { id: 'pcc1', name: 'PCC1', members: [
-        { name: '李宏宇P', account: 'lihongyu@vipkid.com.cn' },
-        { name: '冯杰P', account: 'fengjie@vipkid.com.cn' },
-        { name: '马文彪P', account: 'mawenbiao@vipkid.com.cn' },
-        { name: '王星凯P', account: 'wangxingkai@vipkid.com.cn' },
-        { name: '宋子健P', account: 'songzijian@vipkid.com.cn' },
-        { name: '邓春彦P', account: 'dengchunyan@vipkid.com.cn' },
-        { name: '曾小欢P', account: 'zengxiaohuan@vipkid.com.cn' },
-        { name: '刘始贵P', account: 'liushigui@vipkid.com.cn' },
-        { name: '张世达P', account: 'zhangshida@vipkid.com.cn' },
-        { name: '付正勇P', account: 'fuzhengyong@vipkid.com.cn' },
-        { name: '黄丽P', account: 'huangli@vipkid.com.cn' },
-        { name: '常钰琪P', account: 'changyuqi@vipkid.com.cn' }
+        { name: '李宏宇P', account: 'lihongyu@demo.com' },
+        { name: '冯杰P', account: 'fengjie@demo.com' },
+        { name: '马文彪P', account: 'mawenbiao@demo.com' },
+        { name: '王星凯P', account: 'wangxingkai@demo.com' },
+        { name: '宋子健P', account: 'songzijian@demo.com' },
+        { name: '邓春彦P', account: 'dengchunyan@demo.com' },
+        { name: '曾小欢P', account: 'zengxiaohuan@demo.com' },
+        { name: '刘始贵P', account: 'liushigui@demo.com' },
+        { name: '张世达P', account: 'zhangshida@demo.com' },
+        { name: '付正勇P', account: 'fuzhengyong@demo.com' },
+        { name: '黄丽P', account: 'huangli@demo.com' },
+        { name: '常钰琪P', account: 'changyuqi@demo.com' }
       ]},
       { id: 'pcc2', name: 'PCC2', members: [
-        { name: '沈艳梅', account: 'xn_shenyanmei@vipkid.com.cn' },
-        { name: '张玉峰', account: 'xn_zhangyufeng@vipkid.com.cn' },
-        { name: '王玉红', account: 'xn_wangyuhong@vipkid.com.cn' },
-        { name: '周建国', account: 'xn_zhoujianguo@vipkid.com.cn' }
+        { name: '沈艳梅', account: 'xn_shenyanmei@demo.com' },
+        { name: '张玉峰', account: 'xn_zhangyufeng@demo.com' },
+        { name: '王玉红', account: 'xn_wangyuhong@demo.com' },
+        { name: '周建国', account: 'xn_zhoujianguo@demo.com' }
       ]},
       { id: 'pcc3', name: 'PCC3', members: [
-        { name: '孙丽萍', account: 'xn_sunliping@vipkid.com.cn' },
-        { name: '马小军', account: 'xn_maxiaojun@vipkid.com.cn' },
-        { name: '黄婷婷', account: 'xn_huangtingting@vipkid.com.cn' },
-        { name: '吴小燕', account: 'xn_wuxiaoyan@vipkid.com.cn' }
+        { name: '孙丽萍', account: 'xn_sunliping@demo.com' },
+        { name: '马小军', account: 'xn_maxiaojun@demo.com' },
+        { name: '黄婷婷', account: 'xn_huangtingting@demo.com' },
+        { name: '吴小燕', account: 'xn_wuxiaoyan@demo.com' }
       ]}
     ]},
     { id: 'lp', name: 'SayABC-LP', children: [
@@ -1073,13 +1087,16 @@ function renderCCTable(filtered) {
 // Initial render
 renderCCTable(allCC.filter(function(c){ return c.type === 'strategy'; }));
 renderSpecialScheduleTable();
+switchScheduleTab('group'); // default active tab
 updateScheduleStats();
 
 // =================== TOOLBAR SEARCH ===================
 function doToolbarSearch() {
-  var val = document.getElementById('toolbarSearchInput').value.trim().toLowerCase();
+  var searchEl = document.getElementById('toolbarSearchInput');
+  if (!searchEl) return;
+  var val = searchEl.value.trim().toLowerCase();
   if (!val) { applyFilters(); return; }
-  document.getElementById('clearSearchBtn').style.display = '';
+  var clearBtn = document.getElementById('clearSearchBtn'); if (clearBtn) clearBtn.style.display = '';
   var filtered = allCC.filter(function(cc) {
     return cc.name.toLowerCase().includes(val) || cc.account.toLowerCase().includes(val);
   });
@@ -1089,8 +1106,10 @@ function doToolbarSearch() {
 }
 
 function clearToolbarSearch() {
-  document.getElementById('toolbarSearchInput').value = '';
-  document.getElementById('clearSearchBtn').style.display = 'none';
+  var searchEl = document.getElementById('toolbarSearchInput');
+  var clearEl = document.getElementById('clearSearchBtn');
+  if (searchEl) searchEl.value = '';
+  if (clearEl) clearEl.style.display = 'none';
   applyFilters();
   // Reset strategy table
   var rows = document.querySelectorAll('#strategyTableBody tr');
@@ -1105,15 +1124,21 @@ function filterStrategyTable(val) {
   });
 }
 
-document.getElementById('toolbarSearchInput').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') doToolbarSearch();
-});
+var toolbarSearchEl = document.getElementById('toolbarSearchInput');
+if (toolbarSearchEl) {
+  toolbarSearchEl.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doToolbarSearch();
+  });
+}
 
 // =================== FILTER DROPDOWNS ===================
 function applyFilters() {
-  var source = document.getElementById('filterSource').value;
-  var status = document.getElementById('filterStatus').value;
-  var searchVal = document.getElementById('toolbarSearchInput').value.trim().toLowerCase();
+  var sourceEl = document.getElementById('filterSource');
+  var statusEl = document.getElementById('filterStatus');
+  var searchEl = document.getElementById('toolbarSearchInput');
+  var source = sourceEl ? sourceEl.value : '';
+  var status = statusEl ? statusEl.value : '';
+  var searchVal = searchEl ? searchEl.value.trim().toLowerCase() : '';
 
   var filtered = allCC.filter(function(cc) {
     var matchSource = !source || cc.source === source || (source === '单独排班' && cc.type === 'single');
