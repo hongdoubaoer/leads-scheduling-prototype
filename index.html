@@ -182,27 +182,29 @@ tr.disabled-row td { color: #999; }
 .toast.error { background: #e74c3c; }
 
 /* Schedule action area */
-.schedule-action-bar { background: #fff; border-radius: 8px; margin-bottom: 16px; padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: flex-end; gap: 16px; }
+.schedule-action-bar { background: #fff; border-radius: 8px; margin-bottom: 16px; padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: flex-start; gap: 16px; }
 .schedule-action-desc { color: #666; font-size: 13px; line-height: 1.7; }
 .schedule-action-desc .tag { margin-right: 6px; }
-.schedule-action-buttons { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.schedule-action-buttons { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-start; }
 .schedule-tabs { background:#fff; border-radius:8px 8px 0 0; padding:0 20px; display:flex; gap:32px; border-bottom:1px solid #edf0f2; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
 .schedule-tab { padding:16px 0 14px; font-size:15px; font-weight:500; color:#555; cursor:pointer; border-bottom:3px solid transparent; }
 .schedule-tab.active { color:#4ecdc4; border-bottom-color:#4ecdc4; }
 .schedule-tab:hover { color:#4ecdc4; }
 .schedule-filter-card { background:#fff; padding:16px 20px; margin-bottom:16px; border-radius:0 0 8px 8px; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
-.schedule-summary-tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; align-items:center; }
+.schedule-summary-tags { display:none; }
 .schedule-summary-tags .summary-label { color:#666; font-size:13px; margin-right:2px; }
 .schedule-filter-row { display:grid; grid-template-columns: minmax(240px, 1.5fr) repeat(2, minmax(140px, 1fr)) auto; gap:12px; align-items:center; }
 .schedule-filter-row input, .schedule-filter-row select { height:36px; padding:0 12px; border:1px solid #dcdfe6; border-radius:4px; font-size:13px; outline:none; background:#fff; }
 .schedule-filter-row input:focus, .schedule-filter-row select:focus { border-color:#4ecdc4; }
 .schedule-search-wrap { display:flex; align-items:center; height:36px; border:1px solid #dcdfe6; border-radius:4px; background:#fff; overflow:hidden; }
 .schedule-search-wrap:focus-within { border-color:#4ecdc4; }
-.schedule-search-btn { width:38px; height:100%; border:none; background:#fff; color:#666; cursor:pointer; font-size:15px; border-right:1px solid #edf0f2; }
+.schedule-search-btn { width:38px; height:100%; border:none; background:#fff; color:#666; cursor:pointer; font-size:15px; border-left:1px solid #edf0f2; }
 .schedule-search-btn:hover { color:#4ecdc4; background:#f7fbfb; }
 .schedule-search-wrap input { flex:1; min-width:0; border:none; height:34px; padding:0 10px; }
-.special-type-options { display:flex; gap:10px; }
-.schedule-type-option { display:flex; align-items:center; gap:6px; height:34px; padding:0 12px; border:1px solid #dcdfe6; border-radius:6px; background:#fff; cursor:pointer; font-size:13px; }
+.special-type-options { display:flex; gap:12px; }
+.schedule-type-option { display:flex; align-items:center; gap:8px; height:36px; padding:0 14px; border:1px solid #dcdfe6; border-radius:6px; background:#fff; cursor:pointer; font-size:13px; }
+.schedule-type-option input { accent-color:#4ecdc4; }
+.schedule-type-option span { line-height:1; }
 .schedule-type-option:hover { border-color:#4ecdc4; background:#f6fffe; }
 .schedule-panel.hidden { display:none !important; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
@@ -633,13 +635,10 @@ tr.highlight-row { background: #f0fffe; }
 <div class="modal-overlay hidden" id="specialScheduleModal">
   <div class="modal" style="width: 760px;">
     <div class="modal-header">
-      <div class="modal-title">新增特殊排班</div>
+      <div class="modal-title" id="specialScheduleModalTitle">新增特殊排班</div>
       <button class="modal-close" onclick="closeModal('specialScheduleModal')">×</button>
     </div>
     <div class="modal-body">
-      <div style="background:#fff7e6;border:1px solid #ffd591;border-radius:6px;padding:10px 12px;margin-bottom:16px;font-size:13px;color:#8a5a00;">
-        特殊排班用于覆盖加班、节假日等临时场景，优先级最高。
-      </div>
       <div class="form-group">
         <div class="form-label">排班类型</div>
         <div class="form-control">
@@ -647,7 +646,6 @@ tr.highlight-row { background: #f0fffe; }
             <label class="schedule-type-option"><input type="radio" name="specialScheduleType" value="加班" checked><span>加班</span></label>
             <label class="schedule-type-option"><input type="radio" name="specialScheduleType" value="放假"><span>放假</span></label>
           </div>
-          <div class="form-hint">选择本次特殊排班是临时加班，还是节假日 / 临时放假。</div>
         </div>
       </div>
       <div class="form-group">
@@ -664,7 +662,6 @@ tr.highlight-row { background: #f0fffe; }
             <span class="sep">—</span>
             <input type="time" value="18:00" id="specialScheduleEnd">
           </div>
-          <div class="form-hint">放假也需要配置日期 + 时间段，用于表达覆盖范围</div>
         </div>
       </div>
       <div style="border-top: 1px solid #f0f0f0; padding-top: 16px; margin-top: 8px;">
@@ -960,6 +957,7 @@ var orgMemberSelectedAccounts = {}; // temp selection in member picker
 var collapsedOrgNodeIds = {}; // org tree expand/collapse state
 var strategySelectionMode = 'group'; // group | special
 var addedSpecialCC = [];
+var editingSpecialScheduleId = null;
 var activeScheduleTab = 'group';
 var specialSchedules = [
   { id: 'sp1', type: '加班', date: '2026-07-27', start: '19:00', end: '22:00', people: ['沈艳梅','张玉峰','王玉红'], status: '启用', creator: 'wangyating' },
@@ -1002,8 +1000,8 @@ function getActiveFilterValues() {
 
 function renderSearchBox(placeholder) {
   return '<div class="schedule-search-wrap">'
-    + '<button class="schedule-search-btn" type="button" onclick="focusScheduleSearch()" title="搜索">🔍</button>'
     + '<input id="scheduleSearchInput" placeholder="' + placeholder + '" onkeydown="handleScheduleSearchKey(event)">'
+    + '<button class="schedule-search-btn" type="button" onclick="focusScheduleSearch()" title="搜索">🔍</button>'
     + '</div>';
 }
 
@@ -1021,19 +1019,19 @@ function renderScheduleControls() {
   var row = document.getElementById('scheduleFilterRow');
   if (!tags || !row) return;
   if (activeScheduleTab === 'group') {
-    tags.innerHTML = '<span class="tag tag-green">小组常规</span><span class="tag tag-blue">组织架构选到小组</span><span class="tag tag-purple">后续加人自动跟随</span><span class="tag tag-orange">不展示选择人员</span>';
+    tags.innerHTML = '';
     row.innerHTML = renderSearchBox('搜索排班名称 / 适用小组')
       + '<select id="scheduleScopeFilter" onchange="applyScheduleFilters()"><option value="">全部小组</option><option value="销售一组">销售一组</option><option value="销售二组">销售二组</option><option value="销售三组">销售三组</option><option value="新人组">新人组</option></select>'
       + '<select id="scheduleStatusFilter" onchange="applyScheduleFilters()"><option value="">全部状态</option><option value="启用">启用</option><option value="停用">停用</option></select>'
       + '<button class="btn" onclick="resetScheduleFilters()">重置</button>';
   } else if (activeScheduleTab === 'personal') {
-    tags.innerHTML = '<span class="tag tag-orange">个人常规</span><span class="tag tag-blue">单个 CC 独立配置</span><span class="tag tag-purple">优先级高于小组常规</span><span class="tag tag-green">可覆盖小组默认排班</span>';
+    tags.innerHTML = '';
     row.innerHTML = renderSearchBox('搜索 CC 姓名 / 账号')
       + '<select id="scheduleScopeFilter" onchange="applyScheduleFilters()"><option value="">全部所属小组</option><option value="销售一组">销售一组</option><option value="销售二组">销售二组</option><option value="个人排班">个人排班</option></select>'
       + '<select id="scheduleStatusFilter" onchange="applyScheduleFilters()"><option value="">全部状态</option><option value="启用">启用</option><option value="停用">停用</option></select>'
       + '<button class="btn" onclick="resetScheduleFilters()">重置</button>';
   } else {
-    tags.innerHTML = '<span class="tag tag-red">特殊排班</span><span class="tag tag-green">加班</span><span class="tag tag-orange">放假</span><span class="tag tag-purple">日期 + 时间段</span><span class="tag tag-red">优先级最高</span>';
+    tags.innerHTML = '';
     row.innerHTML = renderSearchBox('搜索适用人员 / 创建人')
       + '<select id="scheduleTypeFilter" onchange="applyScheduleFilters()"><option value="">全部类型</option><option value="加班">加班</option><option value="放假">放假</option></select>'
       + '<select id="scheduleStatusFilter" onchange="applyScheduleFilters()"><option value="">全部状态</option><option value="启用">启用</option><option value="停用">停用</option></select>'
@@ -1114,26 +1112,39 @@ function renderSpecialScheduleTable() {
 function showSpecialScheduleDetail(id) {
   var item = specialSchedules.find(function(x){ return x.id === id; });
   if (!item) return;
+  var typeClass = item.type === '加班' ? 'tag-green' : 'tag-orange';
   document.getElementById('strategyDetailTitle').textContent = '特殊排班详情 — ' + item.type;
   document.getElementById('strategyDetailBody').innerHTML = '<div class="detail-grid">'
-    + '<div><label>排班类型</label><p><span class="tag ' + (item.type === '加班' ? 'tag-green' : 'tag-orange') + '">' + item.type + '</span></p></div>'
-    + '<div><label>覆盖日期</label><p>' + item.date + '</p></div>'
-    + '<div><label>覆盖时间段</label><p>' + item.start + ' - ' + item.end + '</p></div>'
-    + '<div><label>状态</label><p>' + item.status + '</p></div>'
-    + '<div style="grid-column:1/-1;"><label>适用人员</label><p>' + item.people.join('、') + '</p></div>'
+    + '<div><label>排班类型</label><p><span class="tag ' + typeClass + '">' + item.type + '</span></p></div>'
+    + '<div><label>覆盖日期</label><p><span class="tag tag-purple">' + item.date + '</span></p></div>'
+    + '<div><label>覆盖时间段</label><p><span class="tag tag-purple">' + item.start + ' - ' + item.end + '</span></p></div>'
+    + '<div><label>状态</label><p><span class="tag ' + (item.status === '启用' ? 'tag-green' : 'tag-gray') + '">' + item.status + '</span></p></div>'
+    + '<div><label>创建人</label><p>' + item.creator + '</p></div>'
+    + '<div style="grid-column:1/-1;"><label>适用人员</label><p>' + item.people.map(function(name){ return '<span class="tag tag-blue" style="margin-right:4px;margin-bottom:4px;">' + name + '</span>'; }).join('') + '</p></div>'
     + '</div>';
+  var editBtn = document.getElementById('detailToEditBtn');
+  editBtn.style.display = '';
+  editBtn.textContent = '编辑特殊排班';
+  editBtn.onclick = function(){ closeModal('strategyDetailModal'); showEditSpecialScheduleModal(id); };
   document.getElementById('strategyDetailModal').classList.remove('hidden');
 }
 
 function showEditSpecialScheduleModal(id) {
   var item = specialSchedules.find(function(x){ return x.id === id; });
   if (!item) return;
-  showAddSpecialScheduleModal();
+  strategySelectionMode = 'special';
+  editingSpecialScheduleId = id;
+  addedSpecialCC = item.people.map(function(name){ return { name: name, account: name + '@demo.com' }; });
+  document.getElementById('specialScheduleModalTitle').textContent = '编辑特殊排班';
   document.querySelector('input[name="specialScheduleType"][value="' + item.type + '"]').checked = true;
   document.getElementById('specialScheduleDate').value = item.date;
   document.getElementById('specialScheduleStart').value = item.start;
   document.getElementById('specialScheduleEnd').value = item.end;
-  showToast('已打开特殊排班编辑页，可调整后保存为新配置', 'success');
+  if (document.getElementById('specialOrgPicker')) document.getElementById('specialOrgPicker').classList.add('hidden');
+  var tree = document.getElementById('specialOrgTree');
+  if (tree) tree.innerHTML = renderOrgNodes(orgTreeData, 0);
+  renderSpecialCCTable();
+  document.getElementById('specialScheduleModal').classList.remove('hidden');
 }
 
 function switchScheduleTab(tab) {
@@ -1672,7 +1683,9 @@ function submitStrategy() {
 // =================== ADD SPECIAL SCHEDULE MODAL ===================
 function showAddSpecialScheduleModal() {
   strategySelectionMode = 'special';
+  editingSpecialScheduleId = null;
   addedSpecialCC = [];
+  document.getElementById('specialScheduleModalTitle').textContent = '新增特殊排班';
   document.querySelector('input[name="specialScheduleType"][value="加班"]').checked = true;
   document.getElementById('specialScheduleDate').value = '2026-07-27';
   document.getElementById('specialScheduleStart').value = '09:00';
@@ -1722,12 +1735,23 @@ function submitSpecialSchedule() {
   if (!date || !start || !end) { showToast('请填写日期和时间段', 'error'); return; }
   if (start >= end) { showToast('结束时间必须晚于开始时间', 'error'); return; }
   if (!addedSpecialCC.length) { showToast('请至少选择 1 名人员', 'error'); return; }
-  var id = 'sp' + (new Date().getTime());
-  specialSchedules.push({ id: id, type: type, date: date, start: start, end: end, people: addedSpecialCC.map(function(c){ return c.name; }), status: '停用', creator: 'wangyating' });
-  applyScheduleFilters();
-  closeModal('specialScheduleModal');
-  showToast('特殊排班已保存为停用状态：' + type + '，覆盖 ' + addedSpecialCC.length + ' 人', 'success');
-  setTimeout(function(){ showConfirm('enable-created-special', id); }, 300);
+  if (editingSpecialScheduleId) {
+    var item = specialSchedules.find(function(x){ return x.id === editingSpecialScheduleId; });
+    if (item) {
+      item.type = type; item.date = date; item.start = start; item.end = end; item.people = addedSpecialCC.map(function(c){ return c.name; });
+    }
+    applyScheduleFilters();
+    closeModal('specialScheduleModal');
+    showToast('特殊排班已保存：' + type + '，覆盖 ' + addedSpecialCC.length + ' 人', 'success');
+    editingSpecialScheduleId = null;
+  } else {
+    var id = 'sp' + (new Date().getTime());
+    specialSchedules.push({ id: id, type: type, date: date, start: start, end: end, people: addedSpecialCC.map(function(c){ return c.name; }), status: '停用', creator: 'wangyating' });
+    applyScheduleFilters();
+    closeModal('specialScheduleModal');
+    showToast('特殊排班已保存为停用状态：' + type + '，覆盖 ' + addedSpecialCC.length + ' 人', 'success');
+    setTimeout(function(){ showConfirm('enable-created-special', id); }, 300);
+  }
 }
 
 // =================== ADD SINGLE CC MODAL ===================
