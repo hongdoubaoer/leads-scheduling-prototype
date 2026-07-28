@@ -655,9 +655,13 @@ tr.highlight-row { background: #f0fffe; }
         </div>
       </div>
       <div class="form-group">
-        <div class="form-label">时间段</div>
+        <div class="form-label">时间设置</div>
         <div class="form-control">
-          <div class="time-range">
+          <div class="special-type-options" style="margin-bottom:10px;">
+            <label class="schedule-type-option"><input type="radio" name="specialTimeMode" value="allDay" onchange="toggleSpecialTimeMode()"><span>全天</span></label>
+            <label class="schedule-type-option"><input type="radio" name="specialTimeMode" value="range" checked onchange="toggleSpecialTimeMode()"><span>指定时间段</span></label>
+          </div>
+          <div class="time-range" id="specialTimeRangeGroup">
             <input type="time" value="09:00" id="specialScheduleStart">
             <span class="sep">—</span>
             <input type="time" value="18:00" id="specialScheduleEnd">
@@ -681,7 +685,7 @@ tr.highlight-row { background: #f0fffe; }
             <div class="org-picker-body">
               <div class="org-tree" id="specialOrgTree"></div>
             </div>
-            <div class="org-hint">点击右侧「选择人员」后，可对该组织下 CC 进行全选、单选或多选。</div>
+            <div class="org-hint">可直接点击「全选」批量添加该组织下全部 CC，也可点击「选择人员」进入原有人员选择流程。</div>
           </div>
           <div class="cc-empty" id="specialCCEmpty">暂未选择人员，请通过组织架构添加</div>
           <table class="hidden" id="specialCCTable" style="margin-top: 8px;">
@@ -960,8 +964,15 @@ var addedSpecialCC = [];
 var editingSpecialScheduleId = null;
 var activeScheduleTab = 'group';
 var specialSchedules = [
-  { id: 'sp1', type: '加班', date: '2026-07-27', start: '19:00', end: '22:00', people: ['沈艳梅','张玉峰','王玉红'], status: '启用', creator: 'wangyating' },
-  { id: 'sp2', type: '放假', date: '2026-08-01', start: '00:00', end: '23:59', people: ['李小华','陈晓丽'], status: '停用', creator: 'wangyating' }
+  { id: 'sp1', type: '加班', date: '2026-07-27', start: '19:00', end: '22:00', allDay: false, people: [
+    { name: '沈艳梅', account: 'xn_shenyanmei@demo.com' },
+    { name: '张玉峰', account: 'xn_zhangyufeng@demo.com' },
+    { name: '王玉红', account: 'xn_wangyuhong@demo.com' }
+  ], status: '启用', creator: 'wangyating' },
+  { id: 'sp2', type: '放假', date: '2026-08-01', start: '00:00', end: '23:59', allDay: true, people: [
+    { name: '李小华', account: 'xn_lixiaohua@demo.com' },
+    { name: '陈晓丽', account: 'xn_chenxiaoli@demo.com' }
+  ], status: '停用', creator: 'wangyating' }
 ];
 
 // =================== SCHEDULE DISPLAY ===================
@@ -1081,7 +1092,8 @@ function renderSpecialScheduleTable() {
   if (!tbody) return;
   var f = activeScheduleTab === 'special' ? getActiveFilterValues() : {q:'', status:'', type:'', date:''};
   var data = specialSchedules.filter(function(item) {
-    var text = (item.type + ' ' + item.date + ' ' + item.start + ' ' + item.end + ' ' + item.people.join(' ') + ' ' + item.status + ' ' + item.creator).toLowerCase();
+    var people = normalizeSpecialPeople(item.people);
+    var text = (item.type + ' ' + item.date + ' ' + item.start + ' ' + item.end + ' ' + people.map(function(p){ return p.name + ' ' + p.account; }).join(' ') + ' ' + item.status + ' ' + item.creator).toLowerCase();
     var matchQ = !f.q || text.includes(f.q);
     var matchType = !f.type || item.type === f.type;
     var matchStatus = !f.status || item.status === f.status;
@@ -1091,15 +1103,17 @@ function renderSpecialScheduleTable() {
   tbody.innerHTML = data.map(function(item) {
     var statusTag = item.status === '启用' ? '<span class="tag tag-green">启用</span>' : '<span class="tag tag-gray">停用</span>';
     var typeTag = item.type === '加班' ? '<span class="tag tag-green">加班</span>' : '<span class="tag tag-orange">放假</span>';
-    var peopleTags = item.people.slice(0, 3).map(function(name) { return '<span class="tag tag-blue">' + name + '</span>'; }).join(' ');
-    if (item.people.length > 3) peopleTags += ' <span class="tag tag-gray">等 ' + item.people.length + ' 人</span>';
+    var people = normalizeSpecialPeople(item.people);
+    var timeText = item.allDay ? '全天' : (item.start + ' - ' + item.end);
+    var peopleTags = people.slice(0, 3).map(function(person) { return '<span class="tag tag-blue">' + person.name + '</span>'; }).join(' ');
+    if (people.length > 3) peopleTags += ' <span class="tag tag-gray">等 ' + people.length + ' 人</span>';
     var toggleBtn = item.status === '启用'
       ? '<button class="action-btn stop" onclick="showConfirm(\'stop-special\',\'' + item.id + '\')">停用</button>'
       : '<button class="action-btn enable" onclick="showConfirm(\'enable-special\',\'' + item.id + '\')">启用</button>';
     return '<tr data-special-id="' + item.id + '" data-status="' + item.status + '">'
       + '<td>' + typeTag + '</td>'
       + '<td><span class="tag tag-purple">' + item.date + '</span></td>'
-      + '<td><span class="tag tag-purple">' + item.start + ' - ' + item.end + '</span></td>'
+      + '<td><span class="tag tag-purple">' + timeText + '</span></td>'
       + '<td><div class="tag-list">' + peopleTags + '</div></td>'
       + '<td>' + statusTag + '</td><td>' + item.creator + '</td>'
       + '<td><button class="action-btn view" onclick="showSpecialScheduleDetail(\'' + item.id + '\')">查看</button> <button class="action-btn edit" onclick="showEditSpecialScheduleModal(\'' + item.id + '\')">编辑</button> ' + toggleBtn + ' <button class="action-btn delete" onclick="showConfirm(\'delete-special\',\'' + item.id + '\')">删除</button></td></tr>';
@@ -1109,18 +1123,44 @@ function renderSpecialScheduleTable() {
 }
 
 
+function getSpecialPersonAccount(name) {
+  var found = allAvailableCC.find(function(c){ return c.name === name; }) || allCC.find(function(c){ return c.name === name; });
+  return found ? found.account : (name + '@demo.com');
+}
+
+function normalizeSpecialPeople(people) {
+  return (people || []).map(function(p) {
+    if (typeof p === 'string') return { name: p, account: getSpecialPersonAccount(p) };
+    return { name: p.name, account: p.account || getSpecialPersonAccount(p.name) };
+  });
+}
+
+function renderSpecialPeopleTable(people, readonly) {
+  var list = normalizeSpecialPeople(people);
+  if (!list.length) return '<div class="cc-empty">暂无适用人员</div>';
+  return '<table style="margin-top:8px;"><thead><tr><th>姓名</th><th>账号</th><th>状态</th>' + (readonly ? '' : '<th>操作</th>') + '</tr></thead><tbody>'
+    + list.map(function(p, i) {
+      return '<tr><td><strong>' + p.name + '</strong></td><td>' + p.account + '</td><td><span class="tag tag-green">已选择</span></td>'
+        + (readonly ? '' : '<td><button class="action-btn delete" onclick="removeSpecialCC(' + i + ')">移除</button></td>') + '</tr>';
+    }).join('') + '</tbody></table>';
+}
+
+
 function showSpecialScheduleDetail(id) {
   var item = specialSchedules.find(function(x){ return x.id === id; });
   if (!item) return;
   var typeClass = item.type === '加班' ? 'tag-green' : 'tag-orange';
   document.getElementById('strategyDetailTitle').textContent = '特殊排班详情 — ' + item.type;
+  var people = normalizeSpecialPeople(item.people);
+  var timeText = item.allDay ? '全天' : (item.start + ' - ' + item.end);
   document.getElementById('strategyDetailBody').innerHTML = '<div class="detail-grid">'
     + '<div><label>排班类型</label><p><span class="tag ' + typeClass + '">' + item.type + '</span></p></div>'
     + '<div><label>覆盖日期</label><p><span class="tag tag-purple">' + item.date + '</span></p></div>'
-    + '<div><label>覆盖时间段</label><p><span class="tag tag-purple">' + item.start + ' - ' + item.end + '</span></p></div>'
+    + '<div><label>覆盖时间</label><p><span class="tag tag-purple">' + timeText + '</span></p></div>'
     + '<div><label>状态</label><p><span class="tag ' + (item.status === '启用' ? 'tag-green' : 'tag-gray') + '">' + item.status + '</span></p></div>'
     + '<div><label>创建人</label><p>' + item.creator + '</p></div>'
-    + '<div style="grid-column:1/-1;"><label>适用人员</label><p>' + item.people.map(function(name){ return '<span class="tag tag-blue" style="margin-right:4px;margin-bottom:4px;">' + name + '</span>'; }).join('') + '</p></div>'
+    + '<div><label>适用人数</label><p>' + people.length + ' 人</p></div>'
+    + '<div style="grid-column:1/-1;"><label>策略人员名单</label>' + renderSpecialPeopleTable(people, true) + '</div>'
     + '</div>';
   var editBtn = document.getElementById('detailToEditBtn');
   editBtn.style.display = '';
@@ -1134,12 +1174,14 @@ function showEditSpecialScheduleModal(id) {
   if (!item) return;
   strategySelectionMode = 'special';
   editingSpecialScheduleId = id;
-  addedSpecialCC = item.people.map(function(name){ return { name: name, account: name + '@demo.com' }; });
+  addedSpecialCC = normalizeSpecialPeople(item.people);
   document.getElementById('specialScheduleModalTitle').textContent = '编辑特殊排班';
   document.querySelector('input[name="specialScheduleType"][value="' + item.type + '"]').checked = true;
   document.getElementById('specialScheduleDate').value = item.date;
+  document.querySelector('input[name="specialTimeMode"][value="' + (item.allDay ? 'allDay' : 'range') + '"]').checked = true;
   document.getElementById('specialScheduleStart').value = item.start;
   document.getElementById('specialScheduleEnd').value = item.end;
+  toggleSpecialTimeMode();
   if (document.getElementById('specialOrgPicker')) document.getElementById('specialOrgPicker').classList.add('hidden');
   var tree = document.getElementById('specialOrgTree');
   if (tree) tree.innerHTML = renderOrgNodes(orgTreeData, 0);
@@ -1503,6 +1545,22 @@ function toggleSpecialOrgPicker() {
   if (tree) tree.innerHTML = renderOrgNodes(orgTreeData, 0);
 }
 
+function selectAllSpecialMembersFromOrg(id) {
+  strategySelectionMode = 'special';
+  var node = findOrgNode(orgTreeData, id);
+  if (!node) return;
+  var members = getNodeMembers(node);
+  var added = 0;
+  members.forEach(function(m) {
+    if (!addedSpecialCC.some(function(c) { return c.account === m.account; })) {
+      addedSpecialCC.push({ name: m.name, account: m.account });
+      added++;
+    }
+  });
+  renderSpecialCCTable();
+  showToast('已全选「' + node.name + '」下 ' + added + ' 名 CC', added ? 'success' : 'warning');
+}
+
 function findOrgNode(nodes, id) {
   for (var i = 0; i < (nodes || []).length; i++) {
     if (nodes[i].id === id) return nodes[i];
@@ -1681,6 +1739,13 @@ function submitStrategy() {
 }
 
 // =================== ADD SPECIAL SCHEDULE MODAL ===================
+function toggleSpecialTimeMode() {
+  var modeEl = document.querySelector('input[name="specialTimeMode"]:checked');
+  var isAllDay = modeEl && modeEl.value === 'allDay';
+  var range = document.getElementById('specialTimeRangeGroup');
+  if (range) range.style.display = isAllDay ? 'none' : 'flex';
+}
+
 function showAddSpecialScheduleModal() {
   strategySelectionMode = 'special';
   editingSpecialScheduleId = null;
@@ -1688,8 +1753,10 @@ function showAddSpecialScheduleModal() {
   document.getElementById('specialScheduleModalTitle').textContent = '新增特殊排班';
   document.querySelector('input[name="specialScheduleType"][value="加班"]').checked = true;
   document.getElementById('specialScheduleDate').value = '2026-07-27';
+  document.querySelector('input[name="specialTimeMode"][value="range"]').checked = true;
   document.getElementById('specialScheduleStart').value = '09:00';
   document.getElementById('specialScheduleEnd').value = '18:00';
+  toggleSpecialTimeMode();
   document.getElementById('specialCCEmpty').classList.remove('hidden');
   document.getElementById('specialCCTable').classList.add('hidden');
   document.getElementById('specialCCTableBody').innerHTML = '';
@@ -1730,15 +1797,17 @@ document.addEventListener('change', function(e) {
 function submitSpecialSchedule() {
   var type = document.querySelector('input[name="specialScheduleType"]:checked').value;
   var date = document.getElementById('specialScheduleDate').value;
-  var start = document.getElementById('specialScheduleStart').value;
-  var end = document.getElementById('specialScheduleEnd').value;
-  if (!date || !start || !end) { showToast('请填写日期和时间段', 'error'); return; }
-  if (start >= end) { showToast('结束时间必须晚于开始时间', 'error'); return; }
+  var modeEl = document.querySelector('input[name="specialTimeMode"]:checked');
+  var allDay = modeEl && modeEl.value === 'allDay';
+  var start = allDay ? '00:00' : document.getElementById('specialScheduleStart').value;
+  var end = allDay ? '23:59' : document.getElementById('specialScheduleEnd').value;
+  if (!date || (!allDay && (!start || !end))) { showToast('请填写日期和时间段', 'error'); return; }
+  if (!allDay && start >= end) { showToast('结束时间必须晚于开始时间', 'error'); return; }
   if (!addedSpecialCC.length) { showToast('请至少选择 1 名人员', 'error'); return; }
   if (editingSpecialScheduleId) {
     var item = specialSchedules.find(function(x){ return x.id === editingSpecialScheduleId; });
     if (item) {
-      item.type = type; item.date = date; item.start = start; item.end = end; item.people = addedSpecialCC.map(function(c){ return c.name; });
+      item.type = type; item.date = date; item.start = start; item.end = end; item.allDay = allDay; item.people = addedSpecialCC.map(function(c){ return { name: c.name, account: c.account }; });
     }
     applyScheduleFilters();
     closeModal('specialScheduleModal');
@@ -1746,7 +1815,7 @@ function submitSpecialSchedule() {
     editingSpecialScheduleId = null;
   } else {
     var id = 'sp' + (new Date().getTime());
-    specialSchedules.push({ id: id, type: type, date: date, start: start, end: end, people: addedSpecialCC.map(function(c){ return c.name; }), status: '停用', creator: 'wangyating' });
+    specialSchedules.push({ id: id, type: type, date: date, start: start, end: end, allDay: allDay, people: addedSpecialCC.map(function(c){ return { name: c.name, account: c.account }; }), status: '停用', creator: 'wangyating' });
     applyScheduleFilters();
     closeModal('specialScheduleModal');
     showToast('特殊排班已保存为停用状态：' + type + '，覆盖 ' + addedSpecialCC.length + ' 人', 'success');
