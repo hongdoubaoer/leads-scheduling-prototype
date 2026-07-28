@@ -201,10 +201,10 @@ tr.disabled-row td { color: #999; }
 .schedule-search-btn { width:38px; height:100%; border:none; background:#fff; color:#666; cursor:pointer; font-size:15px; border-left:1px solid #edf0f2; }
 .schedule-search-btn:hover { color:#4ecdc4; background:#f7fbfb; }
 .schedule-search-wrap input { flex:1; min-width:0; border:none; height:34px; padding:0 10px; }
-.special-type-options { display:flex; gap:12px; }
-.schedule-type-option { display:flex; align-items:center; gap:8px; height:36px; padding:0 14px; border:1px solid #dcdfe6; border-radius:6px; background:#fff; cursor:pointer; font-size:13px; }
-.schedule-type-option input { accent-color:#4ecdc4; }
-.schedule-type-option span { line-height:1; }
+.special-type-options { display:flex; flex-direction:row; align-items:center; gap:12px; flex-wrap:wrap; }
+.schedule-type-option { display:inline-flex; flex-direction:row; align-items:center; justify-content:center; gap:8px; width:auto; min-width:86px; height:36px; padding:0 14px; border:1px solid #dcdfe6; border-radius:6px; background:#fff; cursor:pointer; font-size:13px; white-space:nowrap; }
+.schedule-type-option input[type="radio"] { width:auto !important; flex:0 0 auto; margin:0; accent-color:#4ecdc4; }
+.schedule-type-option span { line-height:1; display:inline-block; white-space:nowrap; }
 .schedule-type-option:hover { border-color:#4ecdc4; background:#f6fffe; }
 .schedule-panel.hidden { display:none !important; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
@@ -1516,7 +1516,9 @@ function renderOrgNodes(nodes, level) {
       + '<span class="org-count">' + (childCount ? childCount + '个下级 · ' : '') + nodeMembers.length + '人</span>'
       + (strategySelectionMode === 'group'
         ? '<button class="btn btn-sm btn-primary" onclick="chooseGroupForStrategy(\'' + node.id + '\')">选择小组</button>'
-        : '<button class="btn btn-sm btn-primary" onclick="openOrgMemberModal(\'' + node.id + '\')">选择人员</button>')
+        : (strategySelectionMode === 'special'
+          ? '<button class="btn btn-sm" onclick="selectAllSpecialMembersFromOrg(\'' + node.id + '\')">全选</button><button class="btn btn-sm btn-primary" onclick="openOrgMemberModal(\'' + node.id + '\')">选择人员</button>'
+          : '<button class="btn btn-sm btn-primary" onclick="openOrgMemberModal(\'' + node.id + '\')">选择人员</button>'))
       + '</div>';
     if (children.length && !isCollapsed) html += renderOrgNodes(children, level + 1);
     html += '</div>';
