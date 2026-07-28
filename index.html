@@ -186,11 +186,23 @@ tr.disabled-row td { color: #999; }
 .schedule-action-desc { color: #666; font-size: 13px; line-height: 1.7; }
 .schedule-action-desc .tag { margin-right: 6px; }
 .schedule-action-buttons { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.schedule-tabs { background:#fff; border-radius:8px 8px 0 0; padding:0 20px; display:flex; gap:32px; border-bottom:1px solid #edf0f2; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
+.schedule-tab { padding:16px 0 14px; font-size:15px; font-weight:500; color:#555; cursor:pointer; border-bottom:3px solid transparent; }
+.schedule-tab.active { color:#4ecdc4; border-bottom-color:#4ecdc4; }
+.schedule-tab:hover { color:#4ecdc4; }
+.schedule-filter-card { background:#fff; padding:16px 20px; margin-bottom:16px; border-radius:0 0 8px 8px; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
+.schedule-summary-tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; align-items:center; }
+.schedule-summary-tags .summary-label { color:#666; font-size:13px; margin-right:2px; }
+.schedule-filter-row { display:grid; grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(140px, 1fr)) auto; gap:12px; align-items:center; }
+.schedule-filter-row input, .schedule-filter-row select { height:36px; padding:0 12px; border:1px solid #dcdfe6; border-radius:4px; font-size:13px; outline:none; background:#fff; }
+.schedule-filter-row input:focus, .schedule-filter-row select:focus { border-color:#4ecdc4; }
+.schedule-panel.hidden { display:none !important; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .tag.tag-purple { background: #f4f0ff; color: #722ed1; }
 .tag.tag-orange { background: #fff7e6; color: #d46b08; }
 .tag.tag-red { background: #fff1f0; color: #cf1322; }
-@media (max-width: 900px) { .schedule-action-bar { align-items: flex-start; flex-direction: column; } .schedule-action-buttons { justify-content: flex-start; } }
+@media (max-width: 1100px) { .schedule-filter-row { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 900px) { .schedule-action-bar { align-items: flex-start; flex-direction: column; } .schedule-action-buttons { justify-content: flex-start; } .schedule-tabs { gap:18px; } .schedule-filter-row { grid-template-columns: 1fr; } }
 
 
 /* Hidden */
@@ -260,6 +272,17 @@ tr.highlight-row { background: #f0fffe; }
           <button class="btn btn-primary" id="personalAddBtn" onclick="showAddSingleCCModal()">+ 新增个人常规排班</button>
           <button class="btn btn-primary" id="specialAddBtn" onclick="showAddSpecialScheduleModal()">+ 新增特殊排班</button>
         </div>
+      </div>
+
+      <div class="schedule-tabs">
+        <div class="schedule-tab active" data-tab="group" onclick="switchScheduleTab('group')">小组常规排班</div>
+        <div class="schedule-tab" data-tab="personal" onclick="switchScheduleTab('personal')">个人常规排班</div>
+        <div class="schedule-tab" data-tab="special" onclick="switchScheduleTab('special')">特殊排班</div>
+      </div>
+
+      <div class="schedule-filter-card" id="scheduleFilterCard">
+        <div class="schedule-summary-tags" id="scheduleSummaryTags"></div>
+        <div class="schedule-filter-row" id="scheduleFilterRow"></div>
       </div>
 
       <div class="schedule-panel" id="groupSchedulePanel">
@@ -355,7 +378,7 @@ tr.highlight-row { background: #f0fffe; }
 
       </div>
 
-      <div class="schedule-panel" id="personalSchedulePanel">
+      <div class="schedule-panel hidden" id="personalSchedulePanel">
       <!-- Section 2: 个人常规排班 -->
       <div class="table-container" id="ccOverviewTable">
         <div class="table-header">
@@ -382,7 +405,7 @@ tr.highlight-row { background: #f0fffe; }
       </div>
       </div>
 
-      <div class="schedule-panel" id="specialSchedulePanel">
+      <div class="schedule-panel hidden" id="specialSchedulePanel">
         <div class="table-container" id="specialScheduleTableContainer">
           <div class="table-header">
             <div class="table-title">特殊排班</div>
@@ -942,10 +965,114 @@ function updateScheduleStats() {
   // 已取消数量导航展示，仅保留三个配置列表。
 }
 
+function getGroupRows() {
+  return Array.from(document.querySelectorAll('#strategyTableBody tr'));
+}
+
+function getGroupRowMeta(row) {
+  var cells = row.querySelectorAll('td');
+  return {
+    name: row.getAttribute('data-name') || (cells[0] ? cells[0].textContent.trim() : ''),
+    status: row.getAttribute('data-status') || '',
+    text: row.textContent.toLowerCase(),
+    group: cells[4] ? cells[4].textContent.replace(/\d+\s*人/g, '').trim() : ''
+  };
+}
+
+function getActiveFilterValues() {
+  var q = document.getElementById('scheduleSearchInput');
+  var status = document.getElementById('scheduleStatusFilter');
+  var scope = document.getElementById('scheduleScopeFilter');
+  var type = document.getElementById('scheduleTypeFilter');
+  var date = document.getElementById('scheduleDateFilter');
+  return {
+    q: q ? q.value.trim().toLowerCase() : '',
+    status: status ? status.value : '',
+    scope: scope ? scope.value : '',
+    type: type ? type.value : '',
+    date: date ? date.value : ''
+  };
+}
+
+function renderScheduleControls() {
+  var tags = document.getElementById('scheduleSummaryTags');
+  var row = document.getElementById('scheduleFilterRow');
+  if (!tags || !row) return;
+  if (activeScheduleTab === 'group') {
+    tags.innerHTML = '<span class="summary-label">当前查看</span><span class="tag tag-green">小组常规</span><span class="tag tag-blue">组织架构选到小组</span><span class="tag tag-purple">后续加人自动跟随</span><span class="tag tag-orange">不展示选择人员</span>';
+    row.innerHTML = '<input id="scheduleSearchInput" placeholder="搜索排班名称 / 适用小组" oninput="applyScheduleFilters()">'
+      + '<select id="scheduleScopeFilter" onchange="applyScheduleFilters()"><option value="">全部小组</option><option value="销售一组">销售一组</option><option value="销售二组">销售二组</option><option value="销售三组">销售三组</option><option value="新人组">新人组</option></select>'
+      + '<select id="scheduleStatusFilter" onchange="applyScheduleFilters()"><option value="">全部状态</option><option value="启用">启用</option><option value="停用">停用</option></select>'
+      + '<select id="scheduleTypeFilter" onchange="applyScheduleFilters()"><option value="">全部工作日</option><option value="周一">休息日含周一</option><option value="周六">休息日含周六</option><option value="周日">休息日含周日</option></select>'
+      + '<button class="btn" onclick="resetScheduleFilters()">重置</button>';
+  } else if (activeScheduleTab === 'personal') {
+    tags.innerHTML = '<span class="summary-label">当前查看</span><span class="tag tag-orange">个人常规</span><span class="tag tag-blue">单个 CC 独立配置</span><span class="tag tag-purple">与小组常规互斥</span><span class="tag tag-green">每人仅 1 个常规排班</span>';
+    row.innerHTML = '<input id="scheduleSearchInput" placeholder="搜索 CC 姓名 / 账号" oninput="applyScheduleFilters()">'
+      + '<select id="scheduleScopeFilter" onchange="applyScheduleFilters()"><option value="">全部所属小组</option><option value="销售一组">销售一组</option><option value="销售二组">销售二组</option><option value="单独排班">个人排班</option></select>'
+      + '<select id="scheduleStatusFilter" onchange="applyScheduleFilters()"><option value="">全部状态</option><option value="启用">启用</option><option value="停用">停用</option></select>'
+      + '<select id="scheduleTypeFilter" onchange="applyScheduleFilters()"><option value="">全部休息日</option><option value="周三">休息日周三</option><option value="周四">休息日周四</option></select>'
+      + '<button class="btn" onclick="resetScheduleFilters()">重置</button>';
+  } else {
+    tags.innerHTML = '<span class="summary-label">当前查看</span><span class="tag tag-red">特殊排班</span><span class="tag tag-green">加班</span><span class="tag tag-orange">放假</span><span class="tag tag-purple">日期 + 时间段</span><span class="tag tag-red">优先级最高</span>';
+    row.innerHTML = '<input id="scheduleSearchInput" placeholder="搜索适用人员 / 创建人" oninput="applyScheduleFilters()">'
+      + '<select id="scheduleTypeFilter" onchange="applyScheduleFilters()"><option value="">全部类型</option><option value="加班">加班</option><option value="放假">放假</option></select>'
+      + '<select id="scheduleStatusFilter" onchange="applyScheduleFilters()"><option value="">全部状态</option><option value="启用">启用</option><option value="停用">停用</option></select>'
+      + '<input id="scheduleDateFilter" type="date" onchange="applyScheduleFilters()">'
+      + '<button class="btn" onclick="resetScheduleFilters()">重置</button>';
+  }
+}
+
+function applyScheduleFilters() {
+  var f = getActiveFilterValues();
+  if (activeScheduleTab === 'group') {
+    var shown = 0;
+    getGroupRows().forEach(function(r) {
+      var meta = getGroupRowMeta(r);
+      var matchQ = !f.q || meta.text.includes(f.q);
+      var matchScope = !f.scope || meta.text.includes(f.scope.toLowerCase());
+      var matchStatus = !f.status || meta.status === f.status;
+      var matchType = !f.type || meta.text.includes(f.type.toLowerCase());
+      var ok = matchQ && matchScope && matchStatus && matchType;
+      r.style.display = ok ? '' : 'none';
+      if (ok) shown++;
+    });
+    document.getElementById('strategyCount').textContent = '共 ' + shown + ' 条';
+    document.querySelector('#strategyTableContainer .pagination').innerHTML = '共 ' + shown + ' 条 &nbsp; 10条/页';
+  } else if (activeScheduleTab === 'personal') {
+    var filtered = allCC.filter(function(cc) {
+      if (cc.type !== 'single') return false;
+      var text = (cc.name + ' ' + cc.account + ' ' + cc.source + ' ' + cc.rest + ' ' + cc.status).toLowerCase();
+      var matchQ = !f.q || text.includes(f.q);
+      var matchScope = !f.scope || text.includes(f.scope.toLowerCase());
+      var matchStatus = !f.status || cc.status === f.status;
+      var matchType = !f.type || text.includes(f.type.toLowerCase());
+      return matchQ && matchScope && matchStatus && matchType;
+    });
+    renderCCTable(filtered);
+  } else {
+    renderSpecialScheduleTable();
+  }
+}
+
+function resetScheduleFilters() {
+  var ids = ['scheduleSearchInput','scheduleStatusFilter','scheduleScopeFilter','scheduleTypeFilter','scheduleDateFilter'];
+  ids.forEach(function(id) { var el = document.getElementById(id); if (el) el.value = ''; });
+  applyScheduleFilters();
+}
+
 function renderSpecialScheduleTable() {
   var tbody = document.getElementById('specialScheduleTableBody');
   if (!tbody) return;
-  tbody.innerHTML = specialSchedules.map(function(item) {
+  var f = activeScheduleTab === 'special' ? getActiveFilterValues() : {q:'', status:'', type:'', date:''};
+  var data = specialSchedules.filter(function(item) {
+    var text = (item.type + ' ' + item.date + ' ' + item.start + ' ' + item.end + ' ' + item.people.join(' ') + ' ' + item.status + ' ' + item.creator).toLowerCase();
+    var matchQ = !f.q || text.includes(f.q);
+    var matchType = !f.type || item.type === f.type;
+    var matchStatus = !f.status || item.status === f.status;
+    var matchDate = !f.date || item.date === f.date;
+    return matchQ && matchType && matchStatus && matchDate;
+  });
+  tbody.innerHTML = data.map(function(item) {
     var statusTag = item.status === '启用' ? '<span class="tag tag-green">启用</span>' : '<span class="tag tag-gray">停用</span>';
     var typeTag = item.type === '加班' ? '<span class="tag tag-green">加班</span>' : '<span class="tag tag-orange">放假</span>';
     var peopleTags = item.people.slice(0, 3).map(function(name) { return '<span class="tag tag-blue">' + name + '</span>'; }).join(' ');
@@ -961,12 +1088,18 @@ function renderSpecialScheduleTable() {
       + '<td><span class="tag tag-red">最高优先级</span></td><td>' + statusTag + '</td><td>' + item.creator + '</td>'
       + '<td>' + toggleBtn + ' <button class="action-btn delete" onclick="showConfirm(\'delete-special\',\'' + item.id + '\')">删除</button></td></tr>';
   }).join('');
-  document.getElementById('specialScheduleCount').textContent = '共 ' + specialSchedules.length + ' 条';
-  document.getElementById('specialSchedulePagination').innerHTML = '共 ' + specialSchedules.length + ' 条 &nbsp; 10条/页';
+  document.getElementById('specialScheduleCount').textContent = '共 ' + data.length + ' 条';
+  document.getElementById('specialSchedulePagination').innerHTML = '共 ' + data.length + ' 条 &nbsp; 10条/页';
 }
 
 function switchScheduleTab(tab) {
-  // 保留空函数兼容旧调用；当前页面不再使用 Tab 切换。
+  activeScheduleTab = tab;
+  document.querySelectorAll('.schedule-tab').forEach(function(el) { el.classList.toggle('active', el.getAttribute('data-tab') === tab); });
+  document.getElementById('groupSchedulePanel').classList.toggle('hidden', tab !== 'group');
+  document.getElementById('personalSchedulePanel').classList.toggle('hidden', tab !== 'personal');
+  document.getElementById('specialSchedulePanel').classList.toggle('hidden', tab !== 'special');
+  renderScheduleControls();
+  applyScheduleFilters();
 }
 
 // =================== TOAST ===================
@@ -1040,7 +1173,8 @@ function renderCCTable(filtered) {
 
 // Initial render
 renderCCTable(allCC.filter(function(c){ return c.type === 'single'; }));
-renderSpecialScheduleTable();
+renderScheduleControls();
+applyScheduleFilters();
 
 // =================== TOOLBAR SEARCH ===================
 function doToolbarSearch() {
@@ -1155,13 +1289,13 @@ function confirmAction() {
   closeConfirm();
   if (currentConfirmType === 'stop-cc' && currentConfirmTarget) {
     var cc = allCC.find(function(c) { return c.name === currentConfirmTarget; });
-    if (cc) { cc.status = '停用'; renderCCTable(); showToast(currentConfirmTarget + ' 已停用', 'warning'); }
+    if (cc) { cc.status = '停用'; applyScheduleFilters(); showToast(currentConfirmTarget + ' 已停用', 'warning'); }
   } else if (currentConfirmType === 'enable-cc' && currentConfirmTarget) {
     var cc = allCC.find(function(c) { return c.name === currentConfirmTarget; });
-    if (cc) { cc.status = '启用'; renderCCTable(); showToast(currentConfirmTarget + ' 已启用', 'success'); }
+    if (cc) { cc.status = '启用'; applyScheduleFilters(); showToast(currentConfirmTarget + ' 已启用', 'success'); }
   } else if (currentConfirmType === 'remove-cc' && currentConfirmTarget) {
     allCC = allCC.filter(function(c) { return c.name !== currentConfirmTarget; });
-    renderCCTable(); showToast(currentConfirmTarget + ' 已移除', 'success');
+    applyScheduleFilters(); showToast(currentConfirmTarget + ' 已移除', 'success');
   } else if (currentConfirmType === 'stop-strategy' || currentConfirmType === 'enable-strategy' || currentConfirmType === 'enable-created-strategy') {
     var targetRow = document.querySelector('#strategyTableBody tr[data-name="' + currentConfirmTarget + '"]');
     if (targetRow) {
@@ -1178,11 +1312,11 @@ function confirmAction() {
       cells[8].insertBefore(btn, cells[8].querySelector('.delete'));
     }
     allCC.forEach(function(c){ if (c.source === currentConfirmTarget) c.status = (currentConfirmType === 'stop-strategy' ? '停用' : '启用'); });
-    renderCCTable();
+    applyScheduleFilters();
     showToast('小组常规排班「' + currentConfirmTarget + '」已' + (currentConfirmType === 'stop-strategy' ? '停用' : '启用'), 'success');
   } else if (currentConfirmType === 'enable-created-cc') {
     var ccNew = allCC.find(function(c) { return c.name === currentConfirmTarget; });
-    if (ccNew) { ccNew.status = '启用'; renderCCTable(); showToast(currentConfirmTarget + ' 已启用', 'success'); }
+    if (ccNew) { ccNew.status = '启用'; applyScheduleFilters(); showToast(currentConfirmTarget + ' 已启用', 'success'); }
   } else if (['enable-created-special','enable-special','stop-special','delete-special'].includes(currentConfirmType)) {
     var item = specialSchedules.find(function(item){ return item.id === currentConfirmTarget; });
     if (currentConfirmType === 'delete-special') {
@@ -1192,12 +1326,12 @@ function confirmAction() {
       item.status = currentConfirmType === 'stop-special' ? '停用' : '启用';
       showToast('特殊排班已' + item.status, item.status === '启用' ? 'success' : 'warning');
     }
-    renderSpecialScheduleTable();
+    applyScheduleFilters();
   } else if (currentConfirmType === 'delete-strategy' && currentConfirmTarget) {
     var row = document.querySelector('#strategyTableBody tr[data-name="' + currentConfirmTarget + '"]');
     if (row) row.remove();
     allCC = allCC.filter(function(c) { return c.source !== currentConfirmTarget; });
-    renderCCTable(); showToast('小组常规排班「' + currentConfirmTarget + '」已删除', 'success');
+    applyScheduleFilters(); showToast('小组常规排班「' + currentConfirmTarget + '」已删除', 'success');
   } else {
     showToast('操作成功', 'success');
   }
@@ -1546,7 +1680,7 @@ function submitSpecialSchedule() {
   if (!addedSpecialCC.length) { showToast('请至少选择 1 名人员', 'error'); return; }
   var id = 'sp' + (new Date().getTime());
   specialSchedules.push({ id: id, type: type, date: date, start: start, end: end, people: addedSpecialCC.map(function(c){ return c.name; }), status: '停用', creator: 'wangyating' });
-  renderSpecialScheduleTable();
+  applyScheduleFilters();
   closeModal('specialScheduleModal');
   showToast('特殊排班已保存为停用状态：' + type + '，覆盖 ' + addedSpecialCC.length + ' 人', 'success');
   setTimeout(function(){ showConfirm('enable-created-special', id); }, 300);
