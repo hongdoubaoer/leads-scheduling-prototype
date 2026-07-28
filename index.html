@@ -182,7 +182,7 @@ tr.disabled-row td { color: #999; }
 .toast.error { background: #e74c3c; }
 
 /* Schedule action area */
-.schedule-action-bar { background: #fff; border-radius: 8px; margin-bottom: 16px; padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.schedule-action-bar { background: #fff; border-radius: 8px; margin-bottom: 16px; padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: flex-end; gap: 16px; }
 .schedule-action-desc { color: #666; font-size: 13px; line-height: 1.7; }
 .schedule-action-desc .tag { margin-right: 6px; }
 .schedule-action-buttons { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
@@ -193,9 +193,17 @@ tr.disabled-row td { color: #999; }
 .schedule-filter-card { background:#fff; padding:16px 20px; margin-bottom:16px; border-radius:0 0 8px 8px; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
 .schedule-summary-tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; align-items:center; }
 .schedule-summary-tags .summary-label { color:#666; font-size:13px; margin-right:2px; }
-.schedule-filter-row { display:grid; grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(140px, 1fr)) auto; gap:12px; align-items:center; }
+.schedule-filter-row { display:grid; grid-template-columns: minmax(240px, 1.5fr) repeat(2, minmax(140px, 1fr)) auto; gap:12px; align-items:center; }
 .schedule-filter-row input, .schedule-filter-row select { height:36px; padding:0 12px; border:1px solid #dcdfe6; border-radius:4px; font-size:13px; outline:none; background:#fff; }
 .schedule-filter-row input:focus, .schedule-filter-row select:focus { border-color:#4ecdc4; }
+.schedule-search-wrap { display:flex; align-items:center; height:36px; border:1px solid #dcdfe6; border-radius:4px; background:#fff; overflow:hidden; }
+.schedule-search-wrap:focus-within { border-color:#4ecdc4; }
+.schedule-search-btn { width:38px; height:100%; border:none; background:#fff; color:#666; cursor:pointer; font-size:15px; border-right:1px solid #edf0f2; }
+.schedule-search-btn:hover { color:#4ecdc4; background:#f7fbfb; }
+.schedule-search-wrap input { flex:1; min-width:0; border:none; height:34px; padding:0 10px; }
+.special-type-options { display:flex; gap:10px; }
+.schedule-type-option { display:flex; align-items:center; gap:6px; height:34px; padding:0 12px; border:1px solid #dcdfe6; border-radius:6px; background:#fff; cursor:pointer; font-size:13px; }
+.schedule-type-option:hover { border-color:#4ecdc4; background:#f6fffe; }
 .schedule-panel.hidden { display:none !important; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .tag.tag-purple { background: #f4f0ff; color: #722ed1; }
@@ -262,11 +270,6 @@ tr.highlight-row { background: #f0fffe; }
 
       <!-- Schedule Actions -->
       <div class="schedule-action-bar">
-        <div class="schedule-action-desc">
-          <span class="tag tag-green">小组常规</span> 按小组配置默认服务时间；
-          <span class="tag tag-orange">个人常规</span> 单个 CC 独立配置；
-          <span class="tag tag-red">特殊排班</span> 覆盖加班 / 放假，优先级最高。
-        </div>
         <div class="schedule-action-buttons">
           <button class="btn btn-primary" id="groupAddBtn" onclick="showAddStrategyModal()">+ 新增小组常规排班</button>
           <button class="btn btn-primary" id="personalAddBtn" onclick="showAddSingleCCModal()">+ 新增个人常规排班</button>
@@ -412,7 +415,7 @@ tr.highlight-row { background: #f0fffe; }
             <span style="font-size: 12px; color: #999;" id="specialScheduleCount">共 2 条</span>
           </div>
           <table>
-            <thead><tr><th>排班类型</th><th>覆盖日期</th><th>覆盖时间段</th><th>适用人员</th><th>优先级</th><th>状态</th><th>创建人</th><th>操作</th></tr></thead>
+            <thead><tr><th>排班类型</th><th>覆盖日期</th><th>覆盖时间段</th><th>适用人员</th><th>状态</th><th>创建人</th><th>操作</th></tr></thead>
             <tbody id="specialScheduleTableBody"></tbody>
           </table>
           <div class="pagination" id="specialSchedulePagination">共 2 条 &nbsp; 10条/页</div>
@@ -640,9 +643,9 @@ tr.highlight-row { background: #f0fffe; }
       <div class="form-group">
         <div class="form-label">排班类型</div>
         <div class="form-control">
-          <div class="checkbox-group">
-            <label class="checkbox-item"><input type="radio" name="specialScheduleType" value="加班" checked> <span class="tag tag-green">加班</span></label>
-            <label class="checkbox-item"><input type="radio" name="specialScheduleType" value="放假"> <span class="tag tag-orange">放假</span></label>
+          <div class="special-type-options">
+            <label class="schedule-type-option"><input type="radio" name="specialScheduleType" value="加班" checked><span>加班</span></label>
+            <label class="schedule-type-option"><input type="radio" name="specialScheduleType" value="放假"><span>放假</span></label>
           </div>
           <div class="form-hint">选择本次特殊排班是临时加班，还是节假日 / 临时放假。</div>
         </div>
@@ -726,8 +729,8 @@ tr.highlight-row { background: #f0fffe; }
         <div class="form-label">排班方式</div>
         <div class="form-control">
           <select id="ccEditType" onchange="toggleCCEditSections()">
-            <option value="strategy">跟随排班策略</option>
-            <option value="single">单独排班</option>
+            <option value="strategy">跟随小组常规排班</option>
+            <option value="single">个人常规排班</option>
           </select>
         </div>
       </div>
@@ -865,10 +868,11 @@ var allCC = [
   { name: '沈艳梅', account: 'xn_shenyanmei@demo.com', source: '标准班', weekday: '13:00 - 22:00', weekend: '10:30 - 22:00', rest: '周一、周二', status: '启用', type: 'strategy' },
   { name: '张玉峰', account: 'xn_zhangyufeng@demo.com', source: '标准班', weekday: '13:00 - 22:00', weekend: '10:30 - 22:00', rest: '周一', status: '启用', type: 'strategy' },
   { name: '王玉红', account: 'xn_wangyuhong@demo.com', source: '标准班', weekday: '13:00 - 22:00', weekend: '10:30 - 22:00', rest: '周一', status: '启用', type: 'strategy' },
-  { name: '刘小刚', account: 'xn_liuxiaogang@demo.com', source: '单独排班', weekday: '14:00 - 22:00', weekend: '10:30 - 22:00', rest: '周三', status: '启用', type: 'single' },
+  { name: '张红', account: 'xn_zhanghong@demo.com', source: '销售一组', weekday: '13:00 - 22:00', weekend: '10:30 - 22:00', rest: '周一', status: '启用', type: 'strategy' },
+  { name: '刘小刚', account: 'xn_liuxiaogang@demo.com', source: '个人排班', weekday: '14:00 - 22:00', weekend: '10:30 - 22:00', rest: '周三', status: '启用', type: 'single' },
   { name: '李小华', account: 'xn_lixiaohua@demo.com', source: '早班', weekday: '10:00 - 19:00', weekend: '10:00 - 19:00', rest: '周一', status: '启用', type: 'strategy' },
   { name: '赵丽娜', account: 'xn_zhaolinana@demo.com', source: '标准班', weekday: '13:00 - 22:00', weekend: '10:30 - 22:00', rest: '周一', status: '停用', type: 'strategy' },
-  { name: '陈晓丽', account: 'xn_chenxiaoli@demo.com', source: '单独排班', weekday: '13:00 - 21:00', weekend: '10:30 - 21:00', rest: '周四', status: '停用', type: 'single' }
+  { name: '陈晓丽', account: 'xn_chenxiaoli@demo.com', source: '个人排班', weekday: '13:00 - 21:00', weekend: '10:30 - 21:00', rest: '周四', status: '停用', type: 'single' }
 ];
 
 // All available CC (for search)
@@ -880,6 +884,7 @@ var allAvailableCC = [
   { name: '李小华', account: 'xn_lixiaohua@demo.com' },
   { name: '赵丽娜', account: 'xn_zhaolinana@demo.com' },
   { name: '陈晓丽', account: 'xn_chenxiaoli@demo.com' },
+  { name: '张红', account: 'xn_zhanghong@demo.com' },
   { name: '周建国', account: 'xn_zhoujianguo@demo.com' },
   { name: '孙丽萍', account: 'xn_sunliping@demo.com' },
   { name: '马小军', account: 'xn_maxiaojun@demo.com' },
@@ -922,6 +927,7 @@ var orgTreeData = [
         { name: '沈艳梅', account: 'xn_shenyanmei@demo.com' },
         { name: '张玉峰', account: 'xn_zhangyufeng@demo.com' },
         { name: '王玉红', account: 'xn_wangyuhong@demo.com' },
+        { name: '张红', account: 'xn_zhanghong@demo.com' },
         { name: '周建国', account: 'xn_zhoujianguo@demo.com' }
       ]},
       { id: 'pcc3', name: 'PCC3', members: [
@@ -994,27 +1000,41 @@ function getActiveFilterValues() {
   };
 }
 
+function renderSearchBox(placeholder) {
+  return '<div class="schedule-search-wrap">'
+    + '<button class="schedule-search-btn" type="button" onclick="focusScheduleSearch()" title="搜索">🔍</button>'
+    + '<input id="scheduleSearchInput" placeholder="' + placeholder + '" onkeydown="handleScheduleSearchKey(event)">'
+    + '</div>';
+}
+
+function focusScheduleSearch() {
+  var el = document.getElementById('scheduleSearchInput');
+  if (el) { el.focus(); applyScheduleFilters(); }
+}
+
+function handleScheduleSearchKey(e) {
+  if (e.key === 'Enter') applyScheduleFilters();
+}
+
 function renderScheduleControls() {
   var tags = document.getElementById('scheduleSummaryTags');
   var row = document.getElementById('scheduleFilterRow');
   if (!tags || !row) return;
   if (activeScheduleTab === 'group') {
-    tags.innerHTML = '<span class="summary-label">当前查看</span><span class="tag tag-green">小组常规</span><span class="tag tag-blue">组织架构选到小组</span><span class="tag tag-purple">后续加人自动跟随</span><span class="tag tag-orange">不展示选择人员</span>';
-    row.innerHTML = '<input id="scheduleSearchInput" placeholder="搜索排班名称 / 适用小组" oninput="applyScheduleFilters()">'
+    tags.innerHTML = '<span class="tag tag-green">小组常规</span><span class="tag tag-blue">组织架构选到小组</span><span class="tag tag-purple">后续加人自动跟随</span><span class="tag tag-orange">不展示选择人员</span>';
+    row.innerHTML = renderSearchBox('搜索排班名称 / 适用小组')
       + '<select id="scheduleScopeFilter" onchange="applyScheduleFilters()"><option value="">全部小组</option><option value="销售一组">销售一组</option><option value="销售二组">销售二组</option><option value="销售三组">销售三组</option><option value="新人组">新人组</option></select>'
       + '<select id="scheduleStatusFilter" onchange="applyScheduleFilters()"><option value="">全部状态</option><option value="启用">启用</option><option value="停用">停用</option></select>'
-      + '<select id="scheduleTypeFilter" onchange="applyScheduleFilters()"><option value="">全部工作日</option><option value="周一">休息日含周一</option><option value="周六">休息日含周六</option><option value="周日">休息日含周日</option></select>'
       + '<button class="btn" onclick="resetScheduleFilters()">重置</button>';
   } else if (activeScheduleTab === 'personal') {
-    tags.innerHTML = '<span class="summary-label">当前查看</span><span class="tag tag-orange">个人常规</span><span class="tag tag-blue">单个 CC 独立配置</span><span class="tag tag-purple">与小组常规互斥</span><span class="tag tag-green">每人仅 1 个常规排班</span>';
-    row.innerHTML = '<input id="scheduleSearchInput" placeholder="搜索 CC 姓名 / 账号" oninput="applyScheduleFilters()">'
-      + '<select id="scheduleScopeFilter" onchange="applyScheduleFilters()"><option value="">全部所属小组</option><option value="销售一组">销售一组</option><option value="销售二组">销售二组</option><option value="单独排班">个人排班</option></select>'
+    tags.innerHTML = '<span class="tag tag-orange">个人常规</span><span class="tag tag-blue">单个 CC 独立配置</span><span class="tag tag-purple">优先级高于小组常规</span><span class="tag tag-green">可覆盖小组默认排班</span>';
+    row.innerHTML = renderSearchBox('搜索 CC 姓名 / 账号')
+      + '<select id="scheduleScopeFilter" onchange="applyScheduleFilters()"><option value="">全部所属小组</option><option value="销售一组">销售一组</option><option value="销售二组">销售二组</option><option value="个人排班">个人排班</option></select>'
       + '<select id="scheduleStatusFilter" onchange="applyScheduleFilters()"><option value="">全部状态</option><option value="启用">启用</option><option value="停用">停用</option></select>'
-      + '<select id="scheduleTypeFilter" onchange="applyScheduleFilters()"><option value="">全部休息日</option><option value="周三">休息日周三</option><option value="周四">休息日周四</option></select>'
       + '<button class="btn" onclick="resetScheduleFilters()">重置</button>';
   } else {
-    tags.innerHTML = '<span class="summary-label">当前查看</span><span class="tag tag-red">特殊排班</span><span class="tag tag-green">加班</span><span class="tag tag-orange">放假</span><span class="tag tag-purple">日期 + 时间段</span><span class="tag tag-red">优先级最高</span>';
-    row.innerHTML = '<input id="scheduleSearchInput" placeholder="搜索适用人员 / 创建人" oninput="applyScheduleFilters()">'
+    tags.innerHTML = '<span class="tag tag-red">特殊排班</span><span class="tag tag-green">加班</span><span class="tag tag-orange">放假</span><span class="tag tag-purple">日期 + 时间段</span><span class="tag tag-red">优先级最高</span>';
+    row.innerHTML = renderSearchBox('搜索适用人员 / 创建人')
       + '<select id="scheduleTypeFilter" onchange="applyScheduleFilters()"><option value="">全部类型</option><option value="加班">加班</option><option value="放假">放假</option></select>'
       + '<select id="scheduleStatusFilter" onchange="applyScheduleFilters()"><option value="">全部状态</option><option value="启用">启用</option><option value="停用">停用</option></select>'
       + '<input id="scheduleDateFilter" type="date" onchange="applyScheduleFilters()">'
@@ -1031,8 +1051,7 @@ function applyScheduleFilters() {
       var matchQ = !f.q || meta.text.includes(f.q);
       var matchScope = !f.scope || meta.text.includes(f.scope.toLowerCase());
       var matchStatus = !f.status || meta.status === f.status;
-      var matchType = !f.type || meta.text.includes(f.type.toLowerCase());
-      var ok = matchQ && matchScope && matchStatus && matchType;
+      var ok = matchQ && matchScope && matchStatus;
       r.style.display = ok ? '' : 'none';
       if (ok) shown++;
     });
@@ -1045,8 +1064,7 @@ function applyScheduleFilters() {
       var matchQ = !f.q || text.includes(f.q);
       var matchScope = !f.scope || text.includes(f.scope.toLowerCase());
       var matchStatus = !f.status || cc.status === f.status;
-      var matchType = !f.type || text.includes(f.type.toLowerCase());
-      return matchQ && matchScope && matchStatus && matchType;
+      return matchQ && matchScope && matchStatus;
     });
     renderCCTable(filtered);
   } else {
@@ -1085,11 +1103,37 @@ function renderSpecialScheduleTable() {
       + '<td><span class="tag tag-purple">' + item.date + '</span></td>'
       + '<td><span class="tag tag-purple">' + item.start + ' - ' + item.end + '</span></td>'
       + '<td><div class="tag-list">' + peopleTags + '</div></td>'
-      + '<td><span class="tag tag-red">最高优先级</span></td><td>' + statusTag + '</td><td>' + item.creator + '</td>'
-      + '<td>' + toggleBtn + ' <button class="action-btn delete" onclick="showConfirm(\'delete-special\',\'' + item.id + '\')">删除</button></td></tr>';
+      + '<td>' + statusTag + '</td><td>' + item.creator + '</td>'
+      + '<td><button class="action-btn view" onclick="showSpecialScheduleDetail(\'' + item.id + '\')">查看</button> <button class="action-btn edit" onclick="showEditSpecialScheduleModal(\'' + item.id + '\')">编辑</button> ' + toggleBtn + ' <button class="action-btn delete" onclick="showConfirm(\'delete-special\',\'' + item.id + '\')">删除</button></td></tr>';
   }).join('');
   document.getElementById('specialScheduleCount').textContent = '共 ' + data.length + ' 条';
   document.getElementById('specialSchedulePagination').innerHTML = '共 ' + data.length + ' 条 &nbsp; 10条/页';
+}
+
+
+function showSpecialScheduleDetail(id) {
+  var item = specialSchedules.find(function(x){ return x.id === id; });
+  if (!item) return;
+  document.getElementById('strategyDetailTitle').textContent = '特殊排班详情 — ' + item.type;
+  document.getElementById('strategyDetailBody').innerHTML = '<div class="detail-grid">'
+    + '<div><label>排班类型</label><p><span class="tag ' + (item.type === '加班' ? 'tag-green' : 'tag-orange') + '">' + item.type + '</span></p></div>'
+    + '<div><label>覆盖日期</label><p>' + item.date + '</p></div>'
+    + '<div><label>覆盖时间段</label><p>' + item.start + ' - ' + item.end + '</p></div>'
+    + '<div><label>状态</label><p>' + item.status + '</p></div>'
+    + '<div style="grid-column:1/-1;"><label>适用人员</label><p>' + item.people.join('、') + '</p></div>'
+    + '</div>';
+  document.getElementById('strategyDetailModal').classList.remove('hidden');
+}
+
+function showEditSpecialScheduleModal(id) {
+  var item = specialSchedules.find(function(x){ return x.id === id; });
+  if (!item) return;
+  showAddSpecialScheduleModal();
+  document.querySelector('input[name="specialScheduleType"][value="' + item.type + '"]').checked = true;
+  document.getElementById('specialScheduleDate').value = item.date;
+  document.getElementById('specialScheduleStart').value = item.start;
+  document.getElementById('specialScheduleEnd').value = item.end;
+  showToast('已打开特殊排班编辑页，可调整后保存为新配置', 'success');
 }
 
 function switchScheduleTab(tab) {
@@ -1146,7 +1190,7 @@ function renderCCTable(filtered) {
   tbody.innerHTML = '';
   data.forEach(function(cc) {
     var isDisabled = cc.status === '停用';
-    var sourceTag = cc.type === 'single' ? '<span class="tag tag-orange">单独排班</span>' : '<span class="tag tag-green">' + cc.source + '</span>';
+    var sourceTag = cc.type === 'single' ? '<span class="tag tag-orange">个人排班</span>' : '<span class="tag tag-green">' + cc.source + '</span>';
     var statusTag = isDisabled ? '<span class="tag tag-gray">停用</span>' : '<span class="tag tag-green">启用</span>';
     var toggleBtn = isDisabled
       ? '<button class="action-btn enable" onclick="showConfirm(\'enable-cc\',\'' + cc.name + '\')">启用</button>'
@@ -1227,7 +1271,7 @@ function applyFilters() {
   var searchVal = searchEl ? searchEl.value.trim().toLowerCase() : '';
 
   var filtered = allCC.filter(function(cc) {
-    var matchSource = !source || cc.source === source || (source === '单独排班' && cc.type === 'single');
+    var matchSource = !source || cc.source === source || (source === '个人排班' && cc.type === 'single');
     var matchStatus = !status || cc.status === status;
     var matchSearch = !searchVal || cc.name.toLowerCase().includes(searchVal) || cc.account.toLowerCase().includes(searchVal);
     return matchSource && matchStatus && matchSearch;
@@ -1242,8 +1286,8 @@ function applyFilters() {
     var matchS = !status || rowStatus === status;
     var matchSrc = !source || rowName === source || !source;
     var matchSearch2 = !searchVal || r.textContent.toLowerCase().includes(searchVal);
-    // For source filter, if it's "单独排班" hide all strategies; otherwise show
-    if (source === '单独排班') {
+    // For source filter, if it's "个人排班" hide all strategies; otherwise show
+    if (source === '个人排班') {
       r.style.display = 'none';
     } else if (source && rowName !== source) {
       // Show all strategies if source filter is a strategy name
@@ -1751,18 +1795,12 @@ document.getElementById('singleCCSearchInput').addEventListener('keydown', funct
 });
 
 function selectSingleCC(name, account) {
-  // Check if already has scheduling
+  // 已在小组常规排班中的 CC 也允许选择；保存个人常规后按优先级覆盖小组常规。
   var existing = allCC.find(function(c) { return c.account === account; });
-  if (existing) {
-    pendingDuplicateCC = { name: name, account: account };
-    pendingDuplicateCallback = function() {
-      doSelectSingleCC(name, account);
-    };
-    document.getElementById('duplicateDesc').textContent = '「' + name + '」已存在于「' + existing.source + '」中。确认添加后，该 CC 将从原排班中移出并设为单独排班。';
-    document.getElementById('duplicateDialog').classList.remove('hidden');
-    return;
-  }
   doSelectSingleCC(name, account);
+  if (existing && existing.type !== 'single') {
+    showToast('「' + name + '」当前跟随「' + existing.source + '」，保存后个人常规排班优先生效', 'warning');
+  }
 }
 
 function doSelectSingleCC(name, account) {
@@ -1811,7 +1849,7 @@ function submitSingleCC() {
   allCC.push({
     name: name,
     account: account,
-    source: '单独排班',
+    source: '个人排班',
     weekday: weekdayStart + ' - ' + weekdayEnd,
     weekend: weekendStart + ' - ' + weekendEnd,
     rest: restChecked,
@@ -1820,7 +1858,7 @@ function submitSingleCC() {
   });
   renderCCTable();
   closeModal('addSingleCCModal');
-  showToast('已为「' + name + '」创建单独排班，当前为停用状态', 'success');
+  showToast('已为「' + name + '」创建个人常规排班，当前为停用状态', 'success');
   setTimeout(function(){ showConfirm('enable-created-cc', name); }, 300);
 }
 
@@ -1837,7 +1875,7 @@ function confirmDuplicate() {
     pendingDuplicateCallback();
   }
   if (pendingDuplicateCC) {
-    showToast('「' + pendingDuplicateCC.name + '」已从原排班移出并重新分配', 'success');
+    showToast('「' + pendingDuplicateCC.name + '」已配置个人常规排班', 'success');
   }
   pendingDuplicateCC = null;
   pendingDuplicateCallback = null;
@@ -1910,7 +1948,7 @@ function saveCCEdit() {
   if (cc) {
     cc.status = document.getElementById('ccEditStatus').value;
     cc.type = document.getElementById('ccEditType').value;
-    if (cc.type === 'single') { cc.source = '单独排班'; }
+    if (cc.type === 'single') { cc.source = '个人排班'; }
   }
   renderCCTable();
   closeModal('ccEditModal');
