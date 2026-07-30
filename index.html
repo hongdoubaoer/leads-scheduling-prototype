@@ -400,7 +400,7 @@ tr.highlight-row { background: #f0fffe; }
             <span style="font-size: 12px; color: #999;" id="specialScheduleCount">共 2 条</span>
           </div>
           <table>
-            <thead><tr><th>排班名称</th><th>排班类型</th><th>覆盖日期</th><th>覆盖时间段</th><th>适用人员</th><th>状态</th><th>创建人</th><th>操作</th></tr></thead>
+            <thead><tr><th>排班名称</th><th>排班类型</th><th>覆盖日期</th><th>覆盖时间段</th><th>状态</th><th>创建人</th><th>操作</th></tr></thead>
             <tbody id="specialScheduleTableBody"></tbody>
           </table>
           <div class="pagination" id="specialSchedulePagination">共 2 条 &nbsp; 10条/页</div>
@@ -466,7 +466,7 @@ tr.highlight-row { background: #f0fffe; }
           <div class="cc-section-header">
             <div class="cc-section-title"><strong>适用小组</strong> <span id="strategyCCCount" style="color:#999;font-size:12px;"></span></div>
           </div>
-          <div class="cc-search-bar">
+          <div class="cc-search-bar" id="strategyOrgAddBar">
             <button class="btn btn-sm" onclick="toggleOrgPicker()">🏢 通过组织架构添加小组</button>
             <span style="font-size:12px;color:#999;align-self:center;">只支持选择到小组；后续组织架构加人后，默认跟随该小组排班</span>
           </div>
@@ -936,7 +936,7 @@ function renderScheduleControls() {
       + '<button class="btn" onclick="resetScheduleFilters()">重置</button>';
   } else {
     tags.innerHTML = '';
-    row.innerHTML = renderSearchBox('搜索排班名称 / 适用人员 / 创建人')
+    row.innerHTML = renderSearchBox('搜索排班名称 / 创建人')
       + '<select id="scheduleTypeFilter" onchange="applyScheduleFilters()"><option value="">全部类型</option><option value="班">班</option><option value="休">休</option></select>'
       + '<select id="scheduleStatusFilter" onchange="applyScheduleFilters()"><option value="">全部状态</option><option value="启用">启用</option><option value="停用">停用</option></select>'
       + '<input id="scheduleDateFilter" type="date" onchange="applyScheduleFilters()">'
@@ -989,11 +989,7 @@ function renderSpecialScheduleTable() {
     var typeTag = item.type === '班' ? '<span class="tag tag-green">班</span>' : '<span class="tag tag-orange">休</span>';
     var people = normalizeSpecialPeople(item.people);
     var dateText = renderSpecialDateTags(item);
-    var timeText = getSpecialTimeSummary(item);
-    var peopleTags = people.slice(0, 3).map(function(person) { return '<span class="tag tag-blue">' + person.name + '</span>'; }).join(' ');
-    if (people.length > 3) peopleTags += ' <span class="tag tag-gray">等 ' + people.length + ' 人</span>';
-    var groupCount = getSpecialGroupSelectionCount(item.people);
-    if (groupCount) peopleTags += ' <span class="tag tag-green">' + groupCount + '个小组跟随</span>';
+    var timeText = renderSpecialDateTimeTags(item);
     var toggleBtn = item.status === '启用'
       ? '<button class="action-btn stop" onclick="showConfirm(\'stop-special\',\'' + item.id + '\')">停用</button>'
       : '<button class="action-btn enable" onclick="showConfirm(\'enable-special\',\'' + item.id + '\')">启用</button>';
@@ -1001,8 +997,7 @@ function renderSpecialScheduleTable() {
       + '<td><strong>' + (item.name || '未命名特殊排班') + '</strong></td>'
       + '<td>' + typeTag + '</td>'
       + '<td><div class="tag-list">' + dateText + '</div></td>'
-      + '<td><span class="tag tag-purple">' + timeText + '</span></td>'
-      + '<td><div class="tag-list">' + peopleTags + '</div></td>'
+      + '<td><div class="tag-list">' + timeText + '</div></td>'
       + '<td>' + statusTag + '</td><td>' + item.creator + '</td>'
       + '<td><button class="action-btn view" onclick="showSpecialScheduleDetail(\'' + item.id + '\')">查看</button> <button class="action-btn edit" onclick="showEditSpecialScheduleModal(\'' + item.id + '\')">编辑</button> ' + toggleBtn + ' <button class="action-btn delete" onclick="showConfirm(\'delete-special\',\'' + item.id + '\')">删除</button></td></tr>';
   }).join('');
@@ -1065,7 +1060,7 @@ function showSpecialScheduleDetail(id) {
   var statusTag = item.status === '启用' ? '<span class="tag tag-green">启用</span>' : '<span class="tag tag-gray">停用</span>';
   var people = normalizeSpecialPeople(item.people);
   var dateTags = renderSpecialDateTags(item);
-  var timeText = getSpecialTimeSummary(item);
+  var timeText = renderSpecialDateTimeTags(item);
   var peopleRows = people.map(function(p) {
     return '<tr><td><strong>' + p.name + '</strong></td><td>' + p.account + '</td><td>BCC</td><td><span class="tag tag-green">已选择</span></td></tr>';
   }).join('');
@@ -1078,7 +1073,7 @@ function showSpecialScheduleDetail(id) {
     + '<div><span style="color:#999;font-size:12px;">排班类型</span><br><span class="tag ' + typeClass + '">' + item.type + '</span></div>'
     + '<div><span style="color:#999;font-size:12px;">状态</span><br>' + statusTag + '</div>'
     + '<div><span style="color:#999;font-size:12px;">覆盖日期</span><br><div class="tag-list">' + dateTags + '</div></div>'
-    + '<div><span style="color:#999;font-size:12px;">覆盖时间</span><br><span class="tag tag-purple">' + timeText + '</span></div>'
+    + '<div><span style="color:#999;font-size:12px;">覆盖时间</span><br><div class="tag-list">' + timeText + '</div></div>'
     + '<div><span style="color:#999;font-size:12px;">创建人</span><br>' + item.creator + '</div>'
     + '<div><span style="color:#999;font-size:12px;">适用人数</span><br>' + people.length + ' 人</div>'
     + '</div></div>'
@@ -1371,6 +1366,9 @@ function showAddStrategyModal() {
   currentOrgMembers = [];
   orgMemberSelectedAccounts = {};
   if (document.getElementById('orgPicker')) document.getElementById('orgPicker').classList.add('hidden');
+  setStrategyBaseFieldsReadonly(false);
+  var addBar = document.getElementById('strategyOrgAddBar');
+  if (addBar) addBar.style.display = 'flex';
   renderOrgPicker();
   document.getElementById('addStrategyModal').classList.remove('hidden');
 }
@@ -1379,13 +1377,44 @@ function showEditStrategyModal(name) {
   strategySelectionMode = 'group';
   document.getElementById('addStrategyTitle').textContent = '编辑小组常规排班 — ' + name;
   document.getElementById('strategyNameInput').value = name;
-  addedStrategyCC = (groupScheduleSources[name] || []).map(function(g){ return { id: g.id, name: g.name, path: g.path, count: getNodeMembers(findOrgNode(orgTreeData, g.id)).length }; });
+  var strategyRow = document.querySelector('#strategyTableBody tr[data-name="' + name + '"]');
+  var cells = strategyRow ? strategyRow.querySelectorAll('td') : [];
+  if (cells.length) {
+    document.getElementById('strategyWeekdayStart').value = parseTimeRange(cells[1].textContent).start || '13:00';
+    document.getElementById('strategyWeekdayEnd').value = parseTimeRange(cells[1].textContent).end || '22:00';
+    document.getElementById('strategyWeekendStart').value = parseTimeRange(cells[2].textContent).start || '10:30';
+    document.getElementById('strategyWeekendEnd').value = parseTimeRange(cells[2].textContent).end || '22:00';
+    setRestDayChecks(cells[3].textContent);
+  }
+  setStrategyBaseFieldsReadonly(true);
+  var addBar = document.getElementById('strategyOrgAddBar');
+  if (addBar) addBar.style.display = 'none';
+  addedStrategyCC = (groupScheduleSources[name] || []).map(function(g){ return { id: g.id, name: g.name, path: g.path, count: getNodeMembers(findOrgNode(orgTreeData, g.id)).length, status: strategyRow ? strategyRow.getAttribute('data-status') : '启用' }; });
   renderStrategyCCTable();
   currentOrgNode = null;
   currentOrgMembers = [];
   orgMemberSelectedAccounts = {};
+  if (document.getElementById('orgPicker')) document.getElementById('orgPicker').classList.add('hidden');
   renderOrgPicker();
   document.getElementById('addStrategyModal').classList.remove('hidden');
+}
+
+function parseTimeRange(text) {
+  var parts = String(text || '').match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
+  return parts ? { start: parts[1], end: parts[2] } : { start: '', end: '' };
+}
+
+function setRestDayChecks(text) {
+  var value = String(text || '');
+  document.querySelectorAll('#strategyRestDays input').forEach(function(cb) { cb.checked = value.includes(cb.value); });
+}
+
+function setStrategyBaseFieldsReadonly(readonly) {
+  ['strategyNameInput','strategyWeekdayStart','strategyWeekdayEnd','strategyWeekendStart','strategyWeekendEnd'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.disabled = !!readonly;
+  });
+  document.querySelectorAll('#strategyRestDays input').forEach(function(cb) { cb.disabled = !!readonly; });
 }
 
 function flattenOrgMembers(nodes) {
@@ -1610,12 +1639,13 @@ function confirmOrgMemberSelection() {
 function getStrategyResolvedMembers(groups) {
   var resolved = [];
   var seen = {};
+  var isEditing = document.getElementById('addStrategyTitle').textContent.includes('编辑');
   (groups || []).forEach(function(g) {
     var node = findOrgNode(orgTreeData, g.id);
     getNodeMembers(node).forEach(function(m) {
       if (!seen[m.account]) {
         seen[m.account] = true;
-        resolved.push({ name: m.name, account: m.account, status: g.status || '启用', sourceName: g.name, sourcePath: g.path });
+        resolved.push({ name: m.name, account: m.account, status: isEditing ? (g.status || '启用') : '停用', sourceName: g.name, sourcePath: g.path });
       }
     });
   });
@@ -1636,8 +1666,9 @@ function renderStrategyCCTable() {
   document.getElementById('strategyCCCount').textContent = '（' + addedStrategyCC.length + '个小组 / 当前' + members.length + '人）';
   tbody.innerHTML = members.map(function(m) {
     var statusTag = m.status === '停用' ? '<span class="tag tag-gray">停用</span>' : '<span class="tag tag-green">启用</span>';
+    var groupIndex = addedStrategyCC.findIndex(function(g){ return g.name === m.sourceName; });
     return '<tr><td><strong>' + m.name + '</strong></td><td>' + m.account + '</td><td>' + statusTag + '</td><td><span class="tag tag-green">' + (m.sourceName || '小组') + '</span></td>'
-      + '<td><button class="action-btn edit" onclick="openCCEdit(\'' + m.name + '\')">编辑</button></td></tr>';
+      + '<td><button class="action-btn delete" onclick="removeStrategyCC(' + groupIndex + ')">移除</button></td></tr>';
   }).join('')
     + '<tr><td colspan="5" style="background:#fbfcfd;color:#999;font-size:12px;">已选择小组：' + addedStrategyCC.map(function(g, i){ return '<span class="tag tag-blue">' + g.name + '</span> <button class="action-btn delete" onclick="removeStrategyCC(' + i + ')">移除小组</button>'; }).join(' ') + '</td></tr>';
 }
@@ -1747,6 +1778,15 @@ function getSpecialTimeSummary(item) {
   if (allDayCount) parts.push(allDayCount + '天全天');
   if (rangeCount) parts.push(rangeCount + '天指定时段');
   return parts.join(' / ');
+}
+
+function renderSpecialDateTimeTags(item) {
+  var dates = normalizeSpecialDates(item);
+  if (!dates.length) return '<span class="tag tag-gray">-</span>';
+  return dates.slice(0, 3).map(function(d) {
+    var time = d.allDay ? '全天' : (d.start + ' - ' + d.end);
+    return '<span class="tag tag-purple">' + d.date + '（' + getWeekdayText(d.date) + '） ' + time + '</span>';
+  }).join(' ') + (dates.length > 3 ? ' <span class="tag tag-gray">等 ' + dates.length + ' 天</span>' : '');
 }
 
 function renderSpecialDateTags(item) {
@@ -2108,8 +2148,7 @@ function showStrategyDetail(name) {
   var ccRows = ccInStrategy.map(function(c) {
     var st = c.status === '启用' ? '<span class="tag tag-green">启用</span>' : '<span class="tag tag-gray">停用</span>';
     var cls = c.status === '停用' ? ' class="disabled-row"' : '';
-    var action = '<button class="action-btn edit" onclick="openCCEdit(\'' + c.name + '\')">编辑</button>';
-    return '<tr' + cls + '><td><strong>' + c.name + '</strong></td><td>' + c.account + '</td><td>' + st + '</td><td>' + action + '</td></tr>';
+    return '<tr' + cls + '><td><strong>' + c.name + '</strong></td><td>' + c.account + '</td><td>' + st + '</td></tr>';
   }).join('');
 
   document.getElementById('strategyDetailBody').innerHTML =
@@ -2124,13 +2163,12 @@ function showStrategyDetail(name) {
     + '</div></div>'
     + '<div style="border-top:1px solid #f0f0f0;padding-top:16px;">'
     + '<div class="cc-section-header"><div class="cc-section-title"><strong>CC 名单（' + ccInStrategy.length + '人）</strong></div></div>'
-    + '<table style="margin-top:8px;"><thead><tr><th>姓名</th><th>账号</th><th>状态</th><th>操作</th></tr></thead>'
-    + '<tbody>' + (ccRows || '<tr><td colspan="4" style="text-align:center;color:#999;">暂无 CC</td></tr>') + '</tbody></table></div>';
+    + '<table style="margin-top:8px;"><thead><tr><th>姓名</th><th>账号</th><th>状态</th></tr></thead>'
+    + '<tbody>' + (ccRows || '<tr><td colspan="3" style="text-align:center;color:#999;">暂无 CC</td></tr>') + '</tbody></table></div>';
 
-  document.getElementById('detailToEditBtn').onclick = function() {
-    closeModal('strategyDetailModal');
-    showEditStrategyModal(name);
-  };
+  var editBtn = document.getElementById('detailToEditBtn');
+  editBtn.style.display = 'none';
+  editBtn.onclick = null;
   document.getElementById('strategyDetailModal').classList.remove('hidden');
 }
 
