@@ -1012,10 +1012,12 @@ function normalizeSpecialPeople(people) {
   (people || []).forEach(function(p) {
     if (p && p.kind === 'group') {
       var node = findOrgNode(orgTreeData, p.id);
+      var excluded = p.excludedAccounts || [];
       getNodeMembers(node).forEach(function(m) {
+        if (excluded.includes(m.account)) return;
         if (!seen[m.account]) {
           seen[m.account] = true;
-          resolved.push({ name: m.name, account: m.account, kind: 'groupMember', sourceName: p.name });
+          resolved.push({ name: m.name, account: m.account, kind: 'groupMember', sourceName: p.name, sourceGroupId: p.id });
         }
       });
     } else {
@@ -1105,7 +1107,7 @@ function showEditSpecialScheduleModal(id) {
   if (!item) return;
   strategySelectionMode = 'special';
   editingSpecialScheduleId = id;
-  addedSpecialCC = (item.people || []).map(function(c){ return c && c.kind === 'group' ? { kind: 'group', id: c.id, name: c.name, path: c.path } : { kind: 'person', name: c.name, account: c.account }; });
+  addedSpecialCC = (item.people || []).map(function(c){ return c && c.kind === 'group' ? { kind: 'group', id: c.id, name: c.name, path: c.path, excludedAccounts: (c.excludedAccounts || []).slice() } : { kind: 'person', name: c.name, account: c.account }; });
   document.getElementById('specialScheduleModalTitle').textContent = '编辑特殊排班';
   document.getElementById('specialScheduleName').value = item.name || '';
   document.querySelector('input[name="specialScheduleType"][value="' + item.type + '"]').checked = true;
@@ -1399,7 +1401,7 @@ function showEditStrategyModal(name) {
   setStrategyBaseFieldsReadonly(true);
   var addBar = document.getElementById('strategyOrgAddBar');
   if (addBar) addBar.style.display = 'none';
-  addedStrategyCC = (groupScheduleSources[name] || []).map(function(g){ return { id: g.id, name: g.name, path: g.path, count: getNodeMembers(findOrgNode(orgTreeData, g.id)).length, status: strategyRow ? strategyRow.getAttribute('data-status') : '启用' }; });
+  addedStrategyCC = (groupScheduleSources[name] || []).map(function(g){ return { id: g.id, name: g.name, path: g.path, count: getNodeMembers(findOrgNode(orgTreeData, g.id)).length, status: strategyRow ? strategyRow.getAttribute('data-status') : '启用', excludedAccounts: (g.excludedAccounts || []).slice() }; });
   renderStrategyCCTable();
   currentOrgNode = null;
   currentOrgMembers = [];
@@ -1501,7 +1503,7 @@ function chooseGroupForStrategy(id) {
     showToast('该小组已添加', 'warning');
     return;
   }
-  addedStrategyCC.push({ id: id, name: node.name, path: path, count: getNodeMembers(node).length });
+  addedStrategyCC.push({ id: id, name: node.name, path: path, count: getNodeMembers(node).length, excludedAccounts: [] });
   renderStrategyCCTable();
   showToast('已添加小组：' + node.name, 'success');
 }
@@ -1619,7 +1621,7 @@ function selectAllOrgMembersInModal() {
   var keyword = document.getElementById('orgMemberSearch').value.trim().toLowerCase();
   currentOrgMembers.forEach(function(m) {
     var matches = !keyword || m.name.toLowerCase().includes(keyword) || m.account.toLowerCase().includes(keyword);
-    var alreadyAdded = (strategySelectionMode === 'special' ? addedSpecialCC : addedStrategyCC).some(function(c) { return c.account === m.account; });
+    var alreadyAdded = (strategySelectionMode === 'special' ? normalizeSpecialPeople(addedSpecialCC) : getStrategyResolvedMembers(addedStrategyCC)).some(function(c) { return c.account === m.account; });
     if (matches && !alreadyAdded) orgMemberSelectedAccounts[m.account] = m;
   });
   renderOrgMemberList();
@@ -1652,10 +1654,12 @@ function getStrategyResolvedMembers(groups) {
   var isEditing = document.getElementById('addStrategyTitle').textContent.includes('编辑');
   (groups || []).forEach(function(g) {
     var node = findOrgNode(orgTreeData, g.id);
+    var excluded = g.excludedAccounts || [];
     getNodeMembers(node).forEach(function(m) {
+      if (excluded.includes(m.account)) return;
       if (!seen[m.account]) {
         seen[m.account] = true;
-        resolved.push({ name: m.name, account: m.account, status: isEditing ? (g.status || '启用') : '停用', sourceName: g.name, sourcePath: g.path });
+        resolved.push({ name: m.name, account: m.account, status: isEditing ? (g.status || '启用') : '停用', sourceName: g.name, sourcePath: g.path, sourceGroupId: g.id });
       }
     });
   });
@@ -1676,10 +1680,18 @@ function renderStrategyCCTable() {
   document.getElementById('strategyCCCount').textContent = '（' + addedStrategyCC.length + '个小组 / 当前' + members.length + '人）';
   tbody.innerHTML = members.map(function(m) {
     var statusTag = m.status === '停用' ? '<span class="tag tag-gray">停用</span>' : '<span class="tag tag-green">启用</span>';
-    var groupIndex = addedStrategyCC.findIndex(function(g){ return g.name === m.sourceName; });
     return '<tr><td><strong>' + m.name + '</strong></td><td>' + m.account + '</td><td>' + statusTag + '</td><td><span class="tag tag-green">' + (m.sourceName || '小组') + '</span></td>'
-      + '<td><button class="action-btn delete" onclick="removeStrategyCC(' + groupIndex + ')">移除</button></td></tr>';
+      + '<td><button class="action-btn delete" onclick="removeStrategyResolvedCC(\'' + m.account + '\',\'' + m.sourceGroupId + '\')">移除</button></td></tr>';
   }).join('');
+}
+
+function removeStrategyResolvedCC(account, groupId) {
+  var group = addedStrategyCC.find(function(g){ return g.id === groupId; });
+  if (!group) return;
+  group.excludedAccounts = group.excludedAccounts || [];
+  if (!group.excludedAccounts.includes(account)) group.excludedAccounts.push(account);
+  renderStrategyCCTable();
+  showToast('已移除该 CC；后续新增成员仍会自动跟随小组排班', 'success');
 }
 
 function removeStrategyCC(idx) {
@@ -1704,7 +1716,7 @@ function submitStrategy() {
     if (existRow) { showToast('排班名称「' + name + '」已存在', 'error'); return; }
     // Add row to strategy table
     var selectedGroups = addedStrategyCC.slice();
-    groupScheduleSources[name] = selectedGroups.map(function(g){ return { kind: 'group', id: g.id, name: g.name, path: g.path }; });
+    groupScheduleSources[name] = selectedGroups.map(function(g){ return { kind: 'group', id: g.id, name: g.name, path: g.path, excludedAccounts: (g.excludedAccounts || []).slice() }; });
     var currentMembers = getStrategyResolvedMembers(selectedGroups);
     var newRow = document.createElement('tr');
     newRow.setAttribute('data-name', name);
@@ -1734,11 +1746,16 @@ function submitStrategy() {
   }
 
   if (isEdit) {
-    groupScheduleSources[name] = addedStrategyCC.map(function(g){ return { kind: 'group', id: g.id, name: g.name, path: g.path }; });
+    groupScheduleSources[name] = addedStrategyCC.map(function(g){ return { kind: 'group', id: g.id, name: g.name, path: g.path, excludedAccounts: (g.excludedAccounts || []).slice() }; });
     var editRow = document.querySelector('#strategyTableBody tr[data-name="' + name + '"]');
     if (editRow) {
       var editCells = editRow.querySelectorAll('td');
-      if (editCells[4]) editCells[4].innerHTML = addedStrategyCC.map(function(g){ return '<span class="tag tag-green">' + g.name + '</span>'; }).join(' ') + ' <span class="tag tag-blue">' + getStrategyResolvedMembers(addedStrategyCC).length + ' 人</span>';
+      var remainingMembers = getStrategyResolvedMembers(addedStrategyCC);
+      if (editCells[4]) editCells[4].innerHTML = addedStrategyCC.map(function(g){ return '<span class="tag tag-green">' + g.name + '</span>'; }).join(' ') + ' <span class="tag tag-blue">' + remainingMembers.length + ' 人</span>';
+      var remainingAccounts = {};
+      remainingMembers.forEach(function(m){ remainingAccounts[m.account] = true; });
+      allCC = allCC.filter(function(c){ return c.source !== name || remainingAccounts[c.account]; });
+      renderCCTable();
     }
   }
 
@@ -1920,7 +1937,7 @@ function renderSpecialCCTable() {
     var isEditing = !!editingSpecialScheduleId;
     var statusTag = isEditing ? '<span class="tag tag-green">启用</span>' : '<span class="tag tag-gray">停用</span>';
     return '<tr><td><strong>' + c.name + '</strong></td><td>' + c.account + '</td><td><span class="tag ' + (type === '班' ? 'tag-green' : 'tag-orange') + '">' + type + '</span></td><td>' + statusTag + '</td><td><span class="tag tag-blue">' + sourceText + '</span></td>'
-      + '<td><button class="action-btn delete" onclick="removeSpecialResolvedCC(\'' + c.account + '\')">移除</button></td></tr>';
+      + '<td><button class="action-btn delete" onclick="removeSpecialResolvedCC(\'' + c.account + '\',\'' + (c.sourceGroupId || '') + '\')">移除</button></td></tr>';
   }).join('');
 }
 
@@ -1934,10 +1951,20 @@ function removeSpecialGroupById(id) {
   renderSpecialCCTable();
 }
 
-function removeSpecialResolvedCC(account) {
+function removeSpecialResolvedCC(account, groupId) {
+  if (groupId) {
+    var group = addedSpecialCC.find(function(c){ return c.kind === 'group' && c.id === groupId; });
+    if (group) {
+      group.excludedAccounts = group.excludedAccounts || [];
+      if (!group.excludedAccounts.includes(account)) group.excludedAccounts.push(account);
+      renderSpecialCCTable();
+      showToast('已移除该 CC；后续新增成员仍会自动跟随小组特殊排班', 'success');
+      return;
+    }
+  }
   addedSpecialCC = addedSpecialCC.filter(function(c){ return c.kind === 'group' || c.account !== account; });
-  showToast('该 CC 来自已选择小组时，请在人员列表中移除对应成员；个人选择已移除', 'warning');
   renderSpecialCCTable();
+  showToast('已移除该 CC', 'success');
 }
 
 document.addEventListener('change', function(e) {
@@ -1960,7 +1987,7 @@ function submitSpecialSchedule() {
     seenDates[key] = true;
   }
   if (!addedSpecialCC.length || !normalizeSpecialPeople(addedSpecialCC).length) { showToast('请至少选择 1 名人员或小组', 'error'); return; }
-  var savedPeople = addedSpecialCC.map(function(c){ return c.kind === 'group' ? { kind: 'group', id: c.id, name: c.name, path: c.path } : { kind: 'person', name: c.name, account: c.account }; });
+  var savedPeople = addedSpecialCC.map(function(c){ return c.kind === 'group' ? { kind: 'group', id: c.id, name: c.name, path: c.path, excludedAccounts: (c.excludedAccounts || []).slice() } : { kind: 'person', name: c.name, account: c.account }; });
   if (editingSpecialScheduleId) {
     var item = specialSchedules.find(function(x){ return x.id === editingSpecialScheduleId; });
     if (item) {
