@@ -217,9 +217,10 @@ tr.disabled-row td { color: #999; }
 .special-date-toolbar { display:flex; justify-content:flex-end; align-items:center; margin-bottom:10px; }
 .special-date-list { display:flex; flex-direction:column; gap:10px; }
 .special-date-card { border:1px solid #edf0f2; border-radius:8px; padding:12px 14px; background:#fbfcfd; }
-.special-date-card-head { display:grid; grid-template-columns:minmax(180px, 1fr) auto; align-items:center; gap:12px; margin-bottom:10px; }
-.special-date-title { display:flex; align-items:center; gap:8px; font-weight:500; color:#333; min-width:0; }
-.special-date-title input[type="date"] { width:170px; flex:0 0 170px; }
+.special-date-card-head { display:grid; grid-template-columns:minmax(0, 1fr) auto; align-items:center; gap:12px; margin-bottom:10px; }
+.special-date-title { display:grid; grid-template-columns:64px 180px auto; align-items:center; gap:10px; font-weight:500; color:#333; min-width:0; }
+.special-date-index { color:#666; font-size:13px; white-space:nowrap; }
+.special-date-title input[type="date"] { width:180px; }
 .special-date-weekday { color:#666; font-size:13px; font-weight:500; white-space:nowrap; }
 .special-date-card .time-range { margin-top:8px; }
 .special-date-hint { color:#999; font-size:12px; line-height:1.6; margin-top:8px; }
@@ -1678,8 +1679,7 @@ function renderStrategyCCTable() {
     var groupIndex = addedStrategyCC.findIndex(function(g){ return g.name === m.sourceName; });
     return '<tr><td><strong>' + m.name + '</strong></td><td>' + m.account + '</td><td>' + statusTag + '</td><td><span class="tag tag-green">' + (m.sourceName || '小组') + '</span></td>'
       + '<td><button class="action-btn delete" onclick="removeStrategyCC(' + groupIndex + ')">移除</button></td></tr>';
-  }).join('')
-    + '<tr><td colspan="5" style="background:#fbfcfd;color:#999;font-size:12px;">已选择小组：' + addedStrategyCC.map(function(g, i){ return '<span class="tag tag-blue">' + g.name + '</span> <button class="action-btn delete" onclick="removeStrategyCC(' + i + ')">移除小组</button>'; }).join(' ') + '</td></tr>';
+  }).join('');
 }
 
 function removeStrategyCC(idx) {
@@ -1825,7 +1825,7 @@ function renderSpecialDateList(configs) {
     var mode = d.allDay ? 'allDay' : 'range';
     return '<div class="special-date-card" data-date-index="' + i + '">'
       + '<div class="special-date-card-head">'
-      + '<div class="special-date-title"><input type="checkbox" checked disabled><input type="date" value="' + d.date + '" onchange="updateSpecialDateWeekday(' + i + ')"><span class="special-date-weekday" id="specialDateWeekday' + i + '">' + getWeekdayText(d.date) + '</span></div>'
+      + '<div class="special-date-title"><span class="special-date-index">日期 ' + (i + 1) + '</span><input type="date" value="' + d.date + '" onchange="updateSpecialDateWeekday(' + i + ')"><span class="special-date-weekday" id="specialDateWeekday' + i + '">' + getWeekdayText(d.date) + '</span></div>'
       + '<button class="action-btn delete" type="button" onclick="removeSpecialDateConfig(' + i + ')">删除</button>'
       + '</div>'
       + '<div class="special-type-options">'
@@ -1917,7 +1917,9 @@ function renderSpecialCCTable() {
   document.getElementById('specialCCCount').textContent = '（' + getSpecialGroupSelectionCount(addedSpecialCC) + '个小组 / ' + getSpecialDirectSelectionCount(addedSpecialCC) + '个个人 / 当前' + people.length + '人）';
   tbody.innerHTML = people.map(function(c) {
     var sourceText = c.kind === 'groupMember' ? ('跟随小组：' + (c.sourceName || '-')) : '个人选择';
-    return '<tr><td><strong>' + c.name + '</strong></td><td>' + c.account + '</td><td><span class="tag ' + (type === '班' ? 'tag-green' : 'tag-orange') + '">' + type + '</span></td><td><span class="tag tag-green">启用</span></td><td><span class="tag tag-blue">' + sourceText + '</span></td>'
+    var isEditing = !!editingSpecialScheduleId;
+    var statusTag = isEditing ? '<span class="tag tag-green">启用</span>' : '<span class="tag tag-gray">停用</span>';
+    return '<tr><td><strong>' + c.name + '</strong></td><td>' + c.account + '</td><td><span class="tag ' + (type === '班' ? 'tag-green' : 'tag-orange') + '">' + type + '</span></td><td>' + statusTag + '</td><td><span class="tag tag-blue">' + sourceText + '</span></td>'
       + '<td><button class="action-btn delete" onclick="removeSpecialResolvedCC(\'' + c.account + '\')">移除</button></td></tr>';
   }).join('');
 }
@@ -1934,7 +1936,7 @@ function removeSpecialGroupById(id) {
 
 function removeSpecialResolvedCC(account) {
   addedSpecialCC = addedSpecialCC.filter(function(c){ return c.kind === 'group' || c.account !== account; });
-  showToast('如该 CC 来自已选择小组，请先移除小组；个人选择已移除', 'warning');
+  showToast('该 CC 来自已选择小组时，请在人员列表中移除对应成员；个人选择已移除', 'warning');
   renderSpecialCCTable();
 }
 
