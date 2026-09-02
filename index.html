@@ -168,10 +168,11 @@ tr.disabled-row td { color: #999; }
 .member-summary { font-size: 12px; color: #666; margin-bottom: 8px; }
 .member-table-wrap { border: 1px solid #f0f0f0; border-radius: 6px; overflow: hidden; max-height: 360px; overflow-y: auto; }
 .member-empty { padding: 30px; text-align: center; color: #999; font-size: 13px; }
-.special-object-options { display: flex; gap: 10px; flex-wrap: wrap; }
-.special-object-option { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: 1px solid #dcdfe6; border-radius: 4px; cursor: pointer; color: #555; background: #fff; }
+.special-object-options { display: flex; flex-direction: row; align-items: center; gap: 10px; flex-wrap: nowrap; }
+.special-object-option { display: inline-flex; flex: 0 0 auto; flex-direction: row; align-items: center; justify-content: center; gap: 8px; min-width: 104px; height: 36px; padding: 0 16px; border: 1px solid #dcdfe6; border-radius: 4px; cursor: pointer; color: #555; background: #fff; white-space: nowrap; writing-mode: horizontal-tb; }
+.special-object-option span { display: inline-block; white-space: nowrap; word-break: keep-all; }
 .special-object-option.active { border-color: #4ecdc4; color: #159b93; background: #f0faf8; }
-.special-object-option input { accent-color: #4ecdc4; }
+.special-object-option input { width: auto; flex: 0 0 auto; margin: 0; accent-color: #4ecdc4; }
 .special-member-group { margin-top: 12px; border: 1px solid #eef0f2; border-radius: 6px; overflow: hidden; }
 .special-member-group-title { padding: 9px 12px; background: #fafafa; color: #555; font-weight: 500; font-size: 13px; }
 
