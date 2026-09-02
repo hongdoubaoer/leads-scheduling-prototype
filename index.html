@@ -490,10 +490,17 @@ tr.highlight-row { background: #f0fffe; }
           <div class="cc-empty" id="addStrategyCCEmpty">暂未选择小组，请通过组织架构添加小组</div>
           <table class="hidden" id="addStrategyCCTable" style="margin-top: 8px;">
             <thead>
-              <tr><th>姓名</th><th>账号</th><th>状态</th><th>来源</th><th>操作</th></tr>
+              <tr><th>姓名</th><th>账号</th><th>来源</th><th>操作</th></tr>
             </thead>
             <tbody id="addStrategyCCTableBody"></tbody>
           </table>
+          <div class="hidden" id="strategyExcludedSection" style="margin-top:16px;border-top:1px solid #f0f0f0;padding-top:14px;">
+            <div class="cc-section-title" style="margin-bottom:8px;"><strong>已移除人员</strong> <span id="strategyExcludedCount" style="color:#999;font-size:12px;"></span></div>
+            <table>
+              <thead><tr><th>姓名</th><th>账号</th><th>所属小组</th><th>操作</th></tr></thead>
+              <tbody id="strategyExcludedTableBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -566,7 +573,10 @@ tr.highlight-row { background: #f0fffe; }
       </div>
       <div style="border-top: 1px solid #f0f0f0; padding-top: 16px; margin-top: 8px;">
         <div class="cc-section">
-          <div class="form-group" style="margin-bottom:14px;">
+          <div class="cc-section-header">
+            <div class="cc-section-title"><strong>选择适用对象</strong> <span id="specialCCCount" style="color:#999;font-size:12px;"></span></div>
+          </div>
+          <div class="form-group" style="margin:10px 0 14px;">
             <div class="form-label">添加方式</div>
             <div class="form-control">
               <div class="special-object-options">
@@ -575,9 +585,6 @@ tr.highlight-row { background: #f0fffe; }
               </div>
               <div class="form-hint" id="specialObjectHint">选择小组后，组织新增人员自动跟随该特殊排班。</div>
             </div>
-          </div>
-          <div class="cc-section-header">
-            <div class="cc-section-title"><strong>选择适用对象</strong> <span id="specialCCCount" style="color:#999;font-size:12px;"></span></div>
           </div>
           <div class="cc-search-bar" id="specialOrgAddBar">
             <button class="btn btn-sm" onclick="toggleSpecialOrgPicker()">🏢 通过组织架构添加</button>
@@ -593,9 +600,16 @@ tr.highlight-row { background: #f0fffe; }
           </div>
           <div class="cc-empty" id="specialCCEmpty">暂未选择人员，请通过组织架构添加</div>
           <table class="hidden" id="specialCCTable" style="margin-top: 8px;">
-            <thead><tr><th>姓名</th><th>账号</th><th>覆盖类型</th><th>状态</th><th>来源</th><th>操作</th></tr></thead>
+            <thead><tr><th>姓名</th><th>账号</th><th>覆盖类型</th><th>来源</th><th>操作</th></tr></thead>
             <tbody id="specialCCTableBody"></tbody>
           </table>
+          <div class="hidden" id="specialExcludedSection" style="margin-top:16px;border-top:1px solid #f0f0f0;padding-top:14px;">
+            <div class="cc-section-title" style="margin-bottom:8px;"><strong>已移除人员</strong> <span id="specialExcludedCount" style="color:#999;font-size:12px;"></span></div>
+            <table>
+              <thead><tr><th>姓名</th><th>账号</th><th>所属小组</th><th>操作</th></tr></thead>
+              <tbody id="specialExcludedTableBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -1017,7 +1031,7 @@ function normalizeSpecialPeople(people) {
         }
       });
     } else {
-      var person = typeof p === 'string' ? { name: p, account: getSpecialPersonAccount(p) } : { name: p.name, account: p.account || getSpecialPersonAccount(p.name), kind: p.kind || 'person', sourceName: p.sourceName || '个人选择' };
+      var person = typeof p === 'string' ? { name: p, account: getSpecialPersonAccount(p) } : { name: p.name, account: p.account || getSpecialPersonAccount(p.name), kind: p.kind || 'person', sourceName: p.sourceName || '选择个人' };
       if (!seen[person.account]) {
         seen[person.account] = true;
         resolved.push(person);
@@ -1045,13 +1059,13 @@ function renderSpecialPeopleTable(people, readonly) {
     groups[groupName].push(p);
   });
   var body = Object.keys(groups).map(function(groupName) {
-    var rows = groups[groupName].map(function(p, i) {
-      return '<tr><td><strong>' + p.name + '</strong></td><td>' + p.account + '</td><td><span class="tag tag-green">已选择</span></td>'
-        + (readonly ? '' : '<td><button class="action-btn delete" onclick="removeSpecialCC(' + i + ')">移除</button></td>') + '</tr>';
+    var rows = groups[groupName].map(function(p) {
+      return '<tr><td><strong>' + p.name + '</strong></td><td>' + p.account + '</td>'
+        + (readonly ? '' : '<td><button class="action-btn delete" onclick="removeSpecialCC(' + list.indexOf(p) + ')">移除</button></td>') + '</tr>';
     }).join('');
-    return '<tr><td colspan="' + (readonly ? '3' : '4') + '" class="special-member-group-title">' + groupName + '（' + groups[groupName].length + '人）</td></tr>' + rows;
+    return '<tr><td colspan="' + (readonly ? '2' : '3') + '" class="special-member-group-title">' + groupName + '（' + groups[groupName].length + '人）</td></tr>' + rows;
   }).join('');
-  return '<table style="margin-top:8px;"><thead><tr><th>姓名</th><th>账号</th><th>状态</th>' + (readonly ? '' : '<th>操作</th>') + '</tr></thead><tbody>' + body + '</tbody></table>';
+  return '<table style="margin-top:8px;"><thead><tr><th>姓名</th><th>账号</th>' + (readonly ? '' : '<th>操作</th>') + '</tr></thead><tbody>' + body + '</tbody></table>';
 }
 
 
@@ -1705,8 +1719,23 @@ function getStrategyResolvedMembers(groups) {
 function renderStrategyCCTable() {
   var tbody = document.getElementById('addStrategyCCTableBody');
   var members = getStrategyResolvedMembers(addedStrategyCC);
-  if (addedStrategyCC.length === 0) {
-    document.getElementById('addStrategyCCEmpty').classList.remove('hidden');
+  var excluded = [];
+  (addedStrategyCC || []).forEach(function(g) {
+    var node = findOrgNode(orgTreeData, g.id);
+    getNodeMembers(node).forEach(function(m) {
+      if ((g.excludedAccounts || []).includes(m.account)) excluded.push({ name: m.name, account: m.account, groupName: g.name, groupId: g.id });
+    });
+  });
+  var excludedSection = document.getElementById('strategyExcludedSection');
+  if (excludedSection) {
+    excludedSection.classList.toggle('hidden', excluded.length === 0);
+    document.getElementById('strategyExcludedCount').textContent = excluded.length ? '（' + excluded.length + '人）' : '';
+    document.getElementById('strategyExcludedTableBody').innerHTML = excluded.map(function(m) {
+      return '<tr><td><strong>' + m.name + '</strong></td><td>' + m.account + '</td><td><span class="tag tag-blue">' + m.groupName + '</span></td><td><button class="action-btn edit" onclick="restoreStrategyResolvedCC(\'' + m.account + '\',\'' + m.groupId + '\')">移回排班</button></td></tr>';
+    }).join('');
+  }
+  if (addedStrategyCC.length === 0 || members.length === 0) {
+    document.getElementById('addStrategyCCEmpty').classList.toggle('hidden', excluded.length > 0);
     document.getElementById('addStrategyCCTable').classList.add('hidden');
     document.getElementById('strategyCCCount').textContent = '';
     return;
@@ -1714,10 +1743,13 @@ function renderStrategyCCTable() {
   document.getElementById('addStrategyCCEmpty').classList.add('hidden');
   document.getElementById('addStrategyCCTable').classList.remove('hidden');
   document.getElementById('strategyCCCount').textContent = '（' + addedStrategyCC.length + '个小组 / 当前' + members.length + '人）';
-  tbody.innerHTML = members.map(function(m) {
-    var statusTag = m.status === '停用' ? '<span class="tag tag-gray">停用</span>' : '<span class="tag tag-green">启用</span>';
-    return '<tr><td><strong>' + m.name + '</strong></td><td>' + m.account + '</td><td>' + statusTag + '</td><td><span class="tag tag-green">' + (m.sourceName || '小组') + '</span></td>'
-      + '<td><button class="action-btn delete" onclick="removeStrategyResolvedCC(\'' + m.account + '\',\'' + m.sourceGroupId + '\')">移除</button></td></tr>';
+  var groups = {};
+  members.forEach(function(m) { (groups[m.sourceName || '未命名小组'] || (groups[m.sourceName || '未命名小组'] = [])).push(m); });
+  tbody.innerHTML = Object.keys(groups).map(function(groupName) {
+    var rows = groups[groupName].map(function(m) {
+      return '<tr><td><strong>' + m.name + '</strong></td><td>' + m.account + '</td><td><span class="tag tag-green">' + (m.sourceName || '小组') + '</span></td><td><button class="action-btn delete" onclick="removeStrategyResolvedCC(\'' + m.account + '\',\'' + m.sourceGroupId + '\')">移除</button></td></tr>';
+    }).join('');
+    return '<tr class="special-member-group"><td colspan="4" class="special-member-group-title">' + groupName + '（' + groups[groupName].length + '人）</td></tr>' + rows;
   }).join('');
 }
 
@@ -1728,6 +1760,14 @@ function removeStrategyResolvedCC(account, groupId) {
   if (!group.excludedAccounts.includes(account)) group.excludedAccounts.push(account);
   renderStrategyCCTable();
   showToast('已移除该 CC；后续新增成员仍会自动跟随小组排班', 'success');
+}
+
+function restoreStrategyResolvedCC(account, groupId) {
+  var group = addedStrategyCC.find(function(g){ return g.id === groupId; });
+  if (!group) return;
+  group.excludedAccounts = (group.excludedAccounts || []).filter(function(item) { return item !== account; });
+  renderStrategyCCTable();
+  showToast('已移回排班', 'success');
 }
 
 function removeStrategyCC(idx) {
@@ -1956,7 +1996,7 @@ function showAddSpecialScheduleModal() {
 }
 
 function getSpecialMemberGroupName(account) {
-  var groupName = '个人选择';
+  var groupName = '选择个人';
   function walk(nodes) {
     (nodes || []).some(function(node) {
       if ((node.members || []).some(function(m){ return m.account === account; })) {
@@ -1973,8 +2013,28 @@ function getSpecialMemberGroupName(account) {
 function renderSpecialCCTable() {
   var tbody = document.getElementById('specialCCTableBody');
   var people = normalizeSpecialPeople(addedSpecialCC);
+  var excluded = [];
+  (addedSpecialCC || []).forEach(function(c) {
+    if (c.kind === 'group') {
+      var node = findOrgNode(orgTreeData, c.id);
+      getNodeMembers(node).forEach(function(m) {
+        if ((c.excludedAccounts || []).includes(m.account)) {
+          excluded.push({ name: m.name, account: m.account, groupName: c.name, groupId: c.id });
+        }
+      });
+    }
+  });
+  var excludedSection = document.getElementById('specialExcludedSection');
+  if (excludedSection) {
+    excludedSection.classList.toggle('hidden', excluded.length === 0);
+    document.getElementById('specialExcludedCount').textContent = excluded.length ? '（' + excluded.length + '人）' : '';
+    document.getElementById('specialExcludedTableBody').innerHTML = excluded.map(function(m) {
+      return '<tr><td><strong>' + m.name + '</strong></td><td>' + m.account + '</td><td><span class="tag tag-blue">' + m.groupName + '</span></td><td><button class="action-btn edit" onclick="restoreSpecialResolvedCC(\'' + m.account + '\',\'' + m.groupId + '\')">移回排班</button></td></tr>';
+    }).join('');
+  }
   if (addedSpecialCC.length === 0 || people.length === 0) {
     document.getElementById('specialCCEmpty').classList.remove('hidden');
+    document.getElementById('specialCCEmpty').textContent = addedSpecialCC.length ? '所选范围暂无可展示人员，请继续添加对象' : '暂未选择人员，请通过组织架构添加';
     document.getElementById('specialCCTable').classList.add('hidden');
     document.getElementById('specialCCCount').textContent = '';
     return;
@@ -1991,12 +2051,10 @@ function renderSpecialCCTable() {
   });
   tbody.innerHTML = Object.keys(groups).map(function(groupName) {
     var rows = groups[groupName].map(function(c) {
-      var sourceText = c.kind === 'groupMember' ? '跟随小组' : '个人选择';
-      var isEditing = !!editingSpecialScheduleId;
-      var statusTag = isEditing ? '<span class="tag tag-green">启用</span>' : '<span class="tag tag-gray">待保存</span>';
-      return '<tr><td><strong>' + c.name + '</strong></td><td>' + c.account + '</td><td><span class="tag ' + (type === '班' ? 'tag-green' : 'tag-orange') + '">' + type + '</span></td><td>' + statusTag + '</td><td><span class="tag tag-blue">' + sourceText + '</span></td><td><button class="action-btn delete" onclick="removeSpecialResolvedCC(\'' + c.account + '\',\'' + (c.sourceGroupId || '') + '\')">移除</button></td></tr>';
+      var sourceText = c.kind === 'groupMember' ? '跟随小组' : '选择个人';
+      return '<tr><td><strong>' + c.name + '</strong></td><td>' + c.account + '</td><td><span class="tag ' + (type === '班' ? 'tag-green' : 'tag-orange') + '">' + type + '</span></td><td><span class="tag tag-blue">' + sourceText + '</span></td><td><button class="action-btn delete" onclick="removeSpecialResolvedCC(\'' + c.account + '\',\'' + (c.sourceGroupId || '') + '\')">移除</button></td></tr>';
     }).join('');
-    return '<tr class="special-member-group"><td colspan="6" class="special-member-group-title">' + groupName + '（' + groups[groupName].length + '人）</td></tr>' + rows;
+    return '<tr class="special-member-group"><td colspan="5" class="special-member-group-title">' + groupName + '（' + groups[groupName].length + '人）</td></tr>' + rows;
   }).join('');
 }
 
@@ -2008,6 +2066,15 @@ function removeSpecialCC(idx) {
 function removeSpecialGroupById(id) {
   addedSpecialCC = addedSpecialCC.filter(function(c){ return !(c.kind === 'group' && c.id === id); });
   renderSpecialCCTable();
+}
+
+function restoreSpecialResolvedCC(account, groupId) {
+  var group = addedSpecialCC.find(function(c){ return c.kind === 'group' && c.id === groupId; });
+  if (!group) return;
+  group.excludedAccounts = group.excludedAccounts || [];
+  group.excludedAccounts = group.excludedAccounts.filter(function(item) { return item !== account; });
+  renderSpecialCCTable();
+  showToast('已移回排班', 'success');
 }
 
 function removeSpecialResolvedCC(account, groupId) {
