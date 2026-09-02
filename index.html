@@ -168,6 +168,12 @@ tr.disabled-row td { color: #999; }
 .member-summary { font-size: 12px; color: #666; margin-bottom: 8px; }
 .member-table-wrap { border: 1px solid #f0f0f0; border-radius: 6px; overflow: hidden; max-height: 360px; overflow-y: auto; }
 .member-empty { padding: 30px; text-align: center; color: #999; font-size: 13px; }
+.special-object-options { display: flex; gap: 10px; flex-wrap: wrap; }
+.special-object-option { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: 1px solid #dcdfe6; border-radius: 4px; cursor: pointer; color: #555; background: #fff; }
+.special-object-option.active { border-color: #4ecdc4; color: #159b93; background: #f0faf8; }
+.special-object-option input { accent-color: #4ecdc4; }
+.special-member-group { margin-top: 12px; border: 1px solid #eef0f2; border-radius: 6px; overflow: hidden; }
+.special-member-group-title { padding: 9px 12px; background: #fafafa; color: #555; font-weight: 500; font-size: 13px; }
 
 /* Confirm Dialog */
 .confirm-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); z-index: 2000; display: flex; align-items: center; justify-content: center; }
@@ -559,8 +565,18 @@ tr.highlight-row { background: #f0fffe; }
       </div>
       <div style="border-top: 1px solid #f0f0f0; padding-top: 16px; margin-top: 8px;">
         <div class="cc-section">
+          <div class="form-group" style="margin-bottom:14px;">
+            <div class="form-label">添加方式</div>
+            <div class="form-control">
+              <div class="special-object-options">
+                <label class="special-object-option"><input type="radio" name="specialObjectMode" value="group" checked onchange="switchSpecialObjectMode('group')"><span>新增小组</span></label>
+                <label class="special-object-option"><input type="radio" name="specialObjectMode" value="person" onchange="switchSpecialObjectMode('person')"><span>新增个人</span></label>
+              </div>
+              <div class="form-hint" id="specialObjectHint">选择小组后，组织新增人员自动跟随该特殊排班。</div>
+            </div>
+          </div>
           <div class="cc-section-header">
-            <div class="cc-section-title"><strong>选择人员</strong> <span id="specialCCCount" style="color:#999;font-size:12px;"></span></div>
+            <div class="cc-section-title"><strong>选择适用对象</strong> <span id="specialCCCount" style="color:#999;font-size:12px;"></span></div>
           </div>
           <div class="cc-search-bar" id="specialOrgAddBar">
             <button class="btn btn-sm" onclick="toggleSpecialOrgPicker()">🏢 通过组织架构添加</button>
@@ -572,7 +588,7 @@ tr.highlight-row { background: #f0fffe; }
             <div class="org-picker-body">
               <div class="org-tree" id="specialOrgTree"></div>
             </div>
-            <div class="org-hint">可直接点击「选择小组」添加该组织，组织新增人员自动跟随；也可点击「选择人员」只添加当前选中的具体 CC。</div>
+            <div class="org-hint" id="specialOrgHint">当前为新增小组：点击「选择小组」添加组织，组织新增人员自动跟随。</div>
           </div>
           <div class="cc-empty" id="specialCCEmpty">暂未选择人员，请通过组织架构添加</div>
           <table class="hidden" id="specialCCTable" style="margin-top: 8px;">
@@ -845,6 +861,7 @@ var orgMemberSelectedAccounts = {}; // temp selection in member picker
 var collapsedOrgNodeIds = {}; // org tree expand/collapse state
 var strategySelectionMode = 'group'; // group | special
 var addedSpecialCC = [];
+var specialObjectMode = 'group'; // group | person
 var editingSpecialScheduleId = null;
 var activeScheduleTab = 'group';
 var specialSchedules = [
@@ -1034,11 +1051,20 @@ function getSpecialGroupSelectionCount(people) {
 function renderSpecialPeopleTable(people, readonly) {
   var list = normalizeSpecialPeople(people);
   if (!list.length) return '<div class="cc-empty">暂无适用人员</div>';
-  return '<table style="margin-top:8px;"><thead><tr><th>姓名</th><th>账号</th><th>状态</th>' + (readonly ? '' : '<th>操作</th>') + '</tr></thead><tbody>'
-    + list.map(function(p, i) {
+  var groups = {};
+  list.forEach(function(p) {
+    var groupName = p.kind === 'groupMember' ? (p.sourceName || '未命名小组') : getSpecialMemberGroupName(p.account);
+    if (!groups[groupName]) groups[groupName] = [];
+    groups[groupName].push(p);
+  });
+  var body = Object.keys(groups).map(function(groupName) {
+    var rows = groups[groupName].map(function(p, i) {
       return '<tr><td><strong>' + p.name + '</strong></td><td>' + p.account + '</td><td><span class="tag tag-green">已选择</span></td>'
         + (readonly ? '' : '<td><button class="action-btn delete" onclick="removeSpecialCC(' + i + ')">移除</button></td>') + '</tr>';
-    }).join('') + '</tbody></table>';
+    }).join('');
+    return '<tr><td colspan="' + (readonly ? '3' : '4') + '" class="special-member-group-title">' + groupName + '（' + groups[groupName].length + '人）</td></tr>' + rows;
+  }).join('');
+  return '<table style="margin-top:8px;"><thead><tr><th>姓名</th><th>账号</th><th>状态</th>' + (readonly ? '' : '<th>操作</th>') + '</tr></thead><tbody>' + body + '</tbody></table>';
 }
 
 
@@ -1048,7 +1074,7 @@ function setSpecialBaseFieldsReadonly(readonly) {
     var el = document.getElementById(id);
     if (el) el.disabled = disabled;
   });
-  document.querySelectorAll('input[name="specialScheduleType"]').forEach(function(radio) { radio.disabled = disabled; });
+  document.querySelectorAll('input[name="specialScheduleType"], input[name="specialObjectMode"]').forEach(function(radio) { radio.disabled = disabled; });
   document.querySelectorAll('#specialDateList input, #specialDateList button').forEach(function(el) { el.disabled = disabled; });
   var toolbar = document.querySelector('#specialScheduleModal .special-date-toolbar');
   if (toolbar) toolbar.style.display = disabled ? 'none' : 'flex';
@@ -1084,9 +1110,8 @@ function showSpecialScheduleDetail(id) {
     + '<div class="cc-section-header"><div class="cc-section-title"><strong>覆盖日期与时间（' + normalizeSpecialDates(item).length + '天）</strong></div></div>'
     + '<table style="margin-top:8px;"><thead><tr><th>日期</th><th>时间类型</th><th>覆盖时间段</th></tr></thead><tbody>' + renderSpecialDateDetailRows(item) + '</tbody></table></div>'
     + '<div style="border-top:1px solid #f0f0f0;padding-top:16px;margin-top:16px;">'
-    + '<div class="cc-section-header"><div class="cc-section-title"><strong>适用 CC 名单（' + people.length + '人）</strong></div></div>'
-    + '<table style="margin-top:8px;"><thead><tr><th>姓名</th><th>账号</th><th>角色</th><th>状态</th></tr></thead>'
-    + '<tbody>' + (peopleRows || '<tr><td colspan="4" style="text-align:center;color:#999;">暂无 CC</td></tr>') + '</tbody></table></div>';
+    + '<div class="cc-section-header"><div class="cc-section-title"><strong>适用 CC 名单（按组展示）</strong></div></div>'
+    + renderSpecialPeopleTable(item.people, true) + '</div>';
   var editBtn = document.getElementById('detailToEditBtn');
   editBtn.style.display = '';
   editBtn.textContent = '编辑特殊排班';
@@ -1100,6 +1125,10 @@ function showEditSpecialScheduleModal(id) {
   strategySelectionMode = 'special';
   editingSpecialScheduleId = id;
   addedSpecialCC = (item.people || []).map(function(c){ return c && c.kind === 'group' ? { kind: 'group', id: c.id, name: c.name, path: c.path, excludedAccounts: (c.excludedAccounts || []).slice() } : { kind: 'person', name: c.name, account: c.account }; });
+  specialObjectMode = addedSpecialCC.some(function(c){ return c.kind === 'group'; }) ? 'group' : 'person';
+  var modeRadio = document.querySelector('input[name="specialObjectMode"][value="' + specialObjectMode + '"]');
+  if (modeRadio) modeRadio.checked = true;
+  renderSpecialObjectMode();
   document.getElementById('specialScheduleModalTitle').textContent = '编辑特殊排班';
   document.getElementById('specialScheduleName').value = item.name || '';
   document.querySelector('input[name="specialScheduleType"][value="' + item.type + '"]').checked = true;
@@ -1478,7 +1507,9 @@ function renderOrgNodes(nodes, level) {
       + (strategySelectionMode === 'group'
         ? '<div class="org-actions"><button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); chooseGroupForStrategy(\'' + node.id + '\')">选择小组</button></div>'
         : (strategySelectionMode === 'special'
-          ? '<div class="org-actions org-actions-split"><button class="btn btn-sm" onclick="event.stopPropagation(); chooseGroupForSpecial(\'' + node.id + '\')">选择小组</button><button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); openOrgMemberModal(\'' + node.id + '\')">选择人员</button></div>'
+          ? (specialObjectMode === 'group'
+            ? '<div class="org-actions"><button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); chooseGroupForSpecial(\'' + node.id + '\')">选择小组</button></div>'
+            : '<div class="org-actions"><button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); openOrgMemberModal(\'' + node.id + '\')">选择人员</button></div>')
           : '<div class="org-actions"><button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); openOrgMemberModal(\'' + node.id + '\')">选择人员</button></div>'))
       + '</div>';
     if (children.length && !isCollapsed) html += renderOrgNodes(children, level + 1);
@@ -1504,6 +1535,32 @@ function toggleSpecialOrgPicker() {
   strategySelectionMode = 'special';
   var picker = document.getElementById('specialOrgPicker');
   picker.classList.toggle('hidden');
+  var tree = document.getElementById('specialOrgTree');
+  if (tree) tree.innerHTML = renderOrgNodes(orgTreeData, 0);
+}
+
+function switchSpecialObjectMode(mode) {
+  if (mode !== 'group' && mode !== 'person') return;
+  if (specialObjectMode === mode) {
+    renderSpecialObjectMode();
+    return;
+  }
+  if (addedSpecialCC.length && !window.confirm('切换添加方式后，当前已选对象将被清空，是否继续？')) {
+    var current = document.querySelector('input[name="specialObjectMode"][value="' + specialObjectMode + '"]');
+    if (current) current.checked = true;
+    return;
+  }
+  specialObjectMode = mode;
+  addedSpecialCC = [];
+  renderSpecialObjectMode();
+  renderSpecialCCTable();
+}
+
+function renderSpecialObjectMode() {
+  var hint = document.getElementById('specialObjectHint');
+  var orgHint = document.getElementById('specialOrgHint');
+  if (hint) hint.textContent = specialObjectMode === 'group' ? '选择小组后，组织新增人员自动跟随该特殊排班。' : '选择具体 CC，仅当前选中的人员纳入该特殊排班。';
+  if (orgHint) orgHint.textContent = specialObjectMode === 'group' ? '当前为新增小组：点击「选择小组」添加组织，组织新增人员自动跟随。' : '当前为新增个人：点击「选择人员」添加具体 CC。';
   var tree = document.getElementById('specialOrgTree');
   if (tree) tree.innerHTML = renderOrgNodes(orgTreeData, 0);
 }
@@ -1892,6 +1949,10 @@ function showAddSpecialScheduleModal() {
   strategySelectionMode = 'special';
   editingSpecialScheduleId = null;
   addedSpecialCC = [];
+  specialObjectMode = 'group';
+  var groupModeRadio = document.querySelector('input[name="specialObjectMode"][value="group"]');
+  if (groupModeRadio) groupModeRadio.checked = true;
+  renderSpecialObjectMode();
   document.getElementById('specialScheduleModalTitle').textContent = '新增特殊排班';
   document.getElementById('specialScheduleName').value = '';
   document.querySelector('input[name="specialScheduleType"][value="班"]').checked = true;
@@ -1907,6 +1968,21 @@ function showAddSpecialScheduleModal() {
   document.getElementById('specialScheduleModal').classList.remove('hidden');
 }
 
+function getSpecialMemberGroupName(account) {
+  var groupName = '个人选择';
+  function walk(nodes) {
+    (nodes || []).some(function(node) {
+      if ((node.members || []).some(function(m){ return m.account === account; })) {
+        groupName = node.name;
+        return true;
+      }
+      return walk(node.children || []);
+    });
+  }
+  walk(orgTreeData);
+  return groupName;
+}
+
 function renderSpecialCCTable() {
   var tbody = document.getElementById('specialCCTableBody');
   var people = normalizeSpecialPeople(addedSpecialCC);
@@ -1919,13 +1995,21 @@ function renderSpecialCCTable() {
   var type = document.querySelector('input[name="specialScheduleType"]:checked').value;
   document.getElementById('specialCCEmpty').classList.add('hidden');
   document.getElementById('specialCCTable').classList.remove('hidden');
-  document.getElementById('specialCCCount').textContent = '（' + getSpecialGroupSelectionCount(addedSpecialCC) + '个小组 / ' + getSpecialDirectSelectionCount(addedSpecialCC) + '个个人 / 当前' + people.length + '人）';
-  tbody.innerHTML = people.map(function(c) {
-    var sourceText = c.kind === 'groupMember' ? ('跟随小组：' + (c.sourceName || '-')) : '个人选择';
-    var isEditing = !!editingSpecialScheduleId;
-    var statusTag = isEditing ? '<span class="tag tag-green">启用</span>' : '<span class="tag tag-gray">停用</span>';
-    return '<tr><td><strong>' + c.name + '</strong></td><td>' + c.account + '</td><td><span class="tag ' + (type === '班' ? 'tag-green' : 'tag-orange') + '">' + type + '</span></td><td>' + statusTag + '</td><td><span class="tag tag-blue">' + sourceText + '</span></td>'
-      + '<td><button class="action-btn delete" onclick="removeSpecialResolvedCC(\'' + c.account + '\',\'' + (c.sourceGroupId || '') + '\')">移除</button></td></tr>';
+  document.getElementById('specialCCCount').textContent = '（' + people.length + ' 人）';
+  var groups = {};
+  people.forEach(function(c) {
+    var groupName = c.kind === 'groupMember' ? (c.sourceName || '未命名小组') : getSpecialMemberGroupName(c.account);
+    if (!groups[groupName]) groups[groupName] = [];
+    groups[groupName].push(c);
+  });
+  tbody.innerHTML = Object.keys(groups).map(function(groupName) {
+    var rows = groups[groupName].map(function(c) {
+      var sourceText = c.kind === 'groupMember' ? '跟随小组' : '个人选择';
+      var isEditing = !!editingSpecialScheduleId;
+      var statusTag = isEditing ? '<span class="tag tag-green">启用</span>' : '<span class="tag tag-gray">待保存</span>';
+      return '<tr><td><strong>' + c.name + '</strong></td><td>' + c.account + '</td><td><span class="tag ' + (type === '班' ? 'tag-green' : 'tag-orange') + '">' + type + '</span></td><td>' + statusTag + '</td><td><span class="tag tag-blue">' + sourceText + '</span></td><td><button class="action-btn delete" onclick="removeSpecialResolvedCC(\'' + c.account + '\',\'' + (c.sourceGroupId || '') + '\')">移除</button></td></tr>';
+    }).join('');
+    return '<tr class="special-member-group"><td colspan="6" class="special-member-group-title">' + groupName + '（' + groups[groupName].length + '人）</td></tr>' + rows;
   }).join('');
 }
 
