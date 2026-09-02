@@ -808,47 +808,33 @@ var allAvailableCC = [
 
 // Demo org tree based on current org-structure page
 var orgTreeData = [
-  { id: 'ops', name: '运营部', children: [] },
-  { id: 'biz', name: '业务部', children: [
-    { id: 'sales', name: 'SayABC-销售中心', children: [
-      { id: 'pcc1', name: 'PCC1', members: [
-        { name: '李宏宇P', account: 'lihongyu@demo.com' },
-        { name: '冯杰P', account: 'fengjie@demo.com' },
-        { name: '马文彪P', account: 'mawenbiao@demo.com' },
-        { name: '王星凯P', account: 'wangxingkai@demo.com' },
-        { name: '宋子健P', account: 'songzijian@demo.com' },
-        { name: '邓春彦P', account: 'dengchunyan@demo.com' },
-        { name: '曾小欢P', account: 'zengxiaohuan@demo.com' },
-        { name: '刘始贵P', account: 'liushigui@demo.com' },
-        { name: '张世达P', account: 'zhangshida@demo.com' },
-        { name: '付正勇P', account: 'fuzhengyong@demo.com' },
-        { name: '黄丽P', account: 'huangli@demo.com' },
-        { name: '常钰琪P', account: 'changyuqi@demo.com' }
-      ]},
-      { id: 'pcc2', name: 'PCC2', members: [
-        { name: '沈艳梅', account: 'xn_shenyanmei@demo.com' },
-        { name: '张玉峰', account: 'xn_zhangyufeng@demo.com' },
-        { name: '王玉红', account: 'xn_wangyuhong@demo.com' },
-        { name: '张红', account: 'xn_zhanghong@demo.com' },
-        { name: '周建国', account: 'xn_zhoujianguo@demo.com' }
-      ]},
-      { id: 'pcc3', name: 'PCC3', members: [
-        { name: '孙丽萍', account: 'xn_sunliping@demo.com' },
-        { name: '马小军', account: 'xn_maxiaojun@demo.com' },
-        { name: '黄婷婷', account: 'xn_huangtingting@demo.com' },
-        { name: '吴小燕', account: 'xn_wuxiaoyan@demo.com' }
-      ]}
-    ]},
-    { id: 'lp', name: 'SayABC-LP', children: [
-      { id: 'plp1', name: 'PLP1', members: [] },
-      { id: 'plp2', name: 'PLP2', members: [] }
-    ]}
+  { id: 'pcc1', name: 'PCC1', members: [
+    { name: '李宏宇P', account: 'lihongyu@demo.com' },
+    { name: '冯杰P', account: 'fengjie@demo.com' },
+    { name: '马文彪P', account: 'mawenbiao@demo.com' },
+    { name: '王星凯P', account: 'wangxingkai@demo.com' },
+    { name: '宋子健P', account: 'songzijian@demo.com' },
+    { name: '邓春彦P', account: 'dengchunyan@demo.com' },
+    { name: '曾小欢P', account: 'zengxiaohuan@demo.com' },
+    { name: '刘始贵P', account: 'liushigui@demo.com' },
+    { name: '张世达P', account: 'zhangshida@demo.com' },
+    { name: '付正勇P', account: 'fuzhengyong@demo.com' },
+    { name: '黄丽P', account: 'huangli@demo.com' },
+    { name: '常钰琪P', account: 'changyuqi@demo.com' }
   ]},
-  { id: 'mkt', name: '市场部', children: [] },
-  { id: 'teacher', name: '教师端', children: [] },
-  { id: 'qa', name: '质检', children: [] },
-  { id: 'cs', name: '客服', children: [] },
-  { id: 'tmk', name: 'TMK', children: [] }
+  { id: 'pcc2', name: 'PCC2', members: [
+    { name: '沈艳梅', account: 'xn_shenyanmei@demo.com' },
+    { name: '张玉峰', account: 'xn_zhangyufeng@demo.com' },
+    { name: '王玉红', account: 'xn_wangyuhong@demo.com' },
+    { name: '张红', account: 'xn_zhanghong@demo.com' },
+    { name: '周建国', account: 'xn_zhoujianguo@demo.com' }
+  ]},
+  { id: 'pcc3', name: 'PCC3', members: [
+    { name: '孙丽萍', account: 'xn_sunliping@demo.com' },
+    { name: '马小军', account: 'xn_maxiaojun@demo.com' },
+    { name: '黄婷婷', account: 'xn_huangtingting@demo.com' },
+    { name: '吴小燕', account: 'xn_wuxiaoyan@demo.com' }
+  ]}
 ];
 
 var currentConfirmType = '';
@@ -867,7 +853,7 @@ var editingSpecialScheduleId = null;
 var activeScheduleTab = 'group';
 var specialSchedules = [
   { id: 'sp1', name: '销售一组晚间班', type: '班', startDate: '2026-07-27', startTime: '19:00:00', endDate: '2026-07-27', endTime: '22:00:00', people: [
-    { kind: 'group', id: 'pcc1', name: 'PCC1', path: '业务部 / SayABC-销售中心 / PCC1' },
+    { kind: 'group', id: 'pcc1', name: 'PCC1', path: 'PCC1' },
     { kind: 'person', name: '沈艳梅', account: 'xn_shenyanmei@demo.com' }
   ], status: '启用', creator: 'wangyating' },
   { id: 'sp2', name: '8月临时休', type: '休', startDate: '2026-08-01', startTime: '00:00:00', endDate: '2026-08-02', endTime: '18:00:00', people: [
@@ -878,8 +864,8 @@ var specialSchedules = [
 var groupScheduleSources = {
   '标准班': [{ kind: 'group', id: 'pcc2', name: 'PCC2', path: '业务部 / SayABC-销售中心 / PCC2' }],
   '早班': [{ kind: 'group', id: 'pcc3', name: 'PCC3', path: '业务部 / SayABC-销售中心 / PCC3' }],
-  '周末加长班': [{ kind: 'group', id: 'pcc1', name: 'PCC1', path: '业务部 / SayABC-销售中心 / PCC1' }],
-  '新人班': [{ kind: 'group', id: 'pcc1', name: 'PCC1', path: '业务部 / SayABC-销售中心 / PCC1' }]
+  '周末加长班': [{ kind: 'group', id: 'pcc1', name: 'PCC1', path: 'PCC1' }],
+  '新人班': [{ kind: 'group', id: 'pcc1', name: 'PCC1', path: 'PCC1' }]
 };
 
 // =================== SCHEDULE DISPLAY ===================
